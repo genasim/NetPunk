@@ -21,9 +21,12 @@ public:
 protected:
 	virtual void Init() override;
 	IOnlineSessionPtr SessionInterface;
+	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 
-virtual void OnCreateSessionComplete(FName ServerName, bool Succeeded);
-
+	virtual void OnCreateSessionComplete(FName ServerName, bool Succeeded);
+	virtual void OnFindSessionComplete(bool Succeeded);
+	virtual void OnJoinSessionComplete(FName ServerName, EOnJoinSessionCompleteResult::Type Result);
+	
 	UFUNCTION(BlueprintCallable)
 	void HostGame();
 	UFUNCTION(BlueprintCallable)
