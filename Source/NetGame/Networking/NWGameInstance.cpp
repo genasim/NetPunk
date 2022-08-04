@@ -7,10 +7,7 @@
 #include "OnlineSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 
-UNWGameInstance::UNWGameInstance()
-{
-	
-}
+UNWGameInstance::UNWGameInstance() {}
 
 void UNWGameInstance::Init()
 {
@@ -39,9 +36,21 @@ void UNWGameInstance::OnFindSessionComplete(bool Succeeded)
 	if (Succeeded)
 	{
 		const TArray<FOnlineSessionSearchResult> SearchResults = SessionSearch->SearchResults;
+		for (auto Result : SearchResults)
+		{
+			if (!Result.IsValid()) continue;
+			FServerInfo ServerInfo;
+			ServerInfo.ServerName = "Test Server Name";
+			ServerInfo.CurrentPlayers = Result.Session.NumOpenPublicConnections;
+			ServerInfo.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
+			ServerInfo.PingInMs = Result.PingInMs;
+
+			AddServerSlotDelegate.Broadcast(ServerInfo);
+		}
+
 		UE_LOG(LogTemp, Warning, TEXT("Sessions found -> %d"), SearchResults.Num())
-		if (SearchResults.Num())
-			SessionInterface->JoinSession(0, "Session", SearchResults[0]);		
+		// if (SearchResults.Num() >= 0)
+		// SessionInterface->JoinSession(0, "Session", SearchResults[0]);	
 	}
 }
 
@@ -54,31 +63,48 @@ void UNWGameInstance::OnJoinSessionComplete(FName ServerName, EOnJoinSessionComp
 		SessionInterface->GetResolvedConnectString(ServerName, JoinAddress);
 		if (JoinAddress != "")
 			PlayerController->ClientTravel(JoinAddress, ETravelType::TRAVEL_Absolute);
-	}	
+	}
 }
 
 void UNWGameInstance::HostGame()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Create Session"))
-	
 	FOnlineSessionSettings SessionSettings;
 	SessionSettings.bIsDedicated = false;
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.bShouldAdvertise = true;
-	SessionSettings.bIsLANMatch = true;
 	SessionSettings.bAllowJoinInProgress = true;
 	SessionSettings.NumPublicConnections = 3;
+	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
+		SessionSettings.bIsLANMatch = false;
+	else
+		SessionSettings.bIsLANMatch = true;
 	
 	SessionInterface->CreateSession(0, "Session", SessionSettings);
 }
 
-void UNWGameInstance::JoinGame()
+void UNWGameInstance::SearchServers()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Searching sessions ..."))
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
-	SessionSearch->bIsLanQuery = true;
 	SessionSearch->MaxSearchResults = 10000;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 	
+	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
+		SessionSearch->bIsLanQuery = false;
+	else
+		SessionSearch->bIsLanQuery = true;
+	
 	SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
+}
+
+void UNWGameInstance::QuickJoin()
+{
+	// const TArray<FOnlineSessionSearchResult> SearchResults = SessionSearch->SearchResults;
+	// if (SearchResults.Num())
+	// {
+	// 	const auto Index = FMath::RandRange(0,SearchResults.Num());
+	// 	SessionInterface->JoinSession(0, "Session", SearchResults[Index]);		
+	// }
+	UE_LOG(LogTemp, Warning, TEXT("Quick search ... (TODO)"))
 }
