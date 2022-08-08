@@ -60,7 +60,7 @@ void ANetGameCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 	check(PlayerInputComponent);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-
+	
 	PlayerInputComponent->BindAxis("Move Forward / Backward", this, &ANetGameCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("Move Right / Left", this, &ANetGameCharacter::MoveRight);
 

@@ -40,14 +40,20 @@ void UNWGameInstance::OnFindSessionComplete(bool Succeeded)
 		{
 			if (!Result.IsValid()) continue;
 			FServerInfo ServerInfo;
-			ServerInfo.ServerName = "Test Server Name";
+			FString ServerName = "Empty ServerName";
+			FString HostName = "Empty HostName";
+
+			Result.Session.SessionSettings.Get(FName("SERVER_NAME_KEY"), ServerName);
+			Result.Session.SessionSettings.Get(FName("SERVER_HOSTNAME_KEY"), HostName);
+			
+			ServerInfo.ServerName = ServerName;
 			ServerInfo.CurrentPlayers = Result.Session.NumOpenPublicConnections;
 			ServerInfo.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
 			ServerInfo.PingInMs = Result.PingInMs;
 
 			AddServerSlotDelegate.Broadcast(ServerInfo);
 		}
-
+//
 		UE_LOG(LogTemp, Warning, TEXT("Sessions found -> %d"), SearchResults.Num())
 		// if (SearchResults.Num() >= 0)
 		// SessionInterface->JoinSession(0, "Session", SearchResults[0]);	
@@ -66,7 +72,7 @@ void UNWGameInstance::OnJoinSessionComplete(FName ServerName, EOnJoinSessionComp
 	}
 }
 
-void UNWGameInstance::HostGame()
+void UNWGameInstance::HostGame(FString ServerName, FString HostName)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Create Session"))
 	FOnlineSessionSettings SessionSettings;
@@ -79,8 +85,11 @@ void UNWGameInstance::HostGame()
 		SessionSettings.bIsLANMatch = false;
 	else
 		SessionSettings.bIsLANMatch = true;
+
+	SessionSettings.Set(FName("SERVER_NAME_KEY"), ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	SessionSettings.Set(FName("SERVER_HOSTNAME_KEY"), HostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	
-	SessionInterface->CreateSession(0, "Session", SessionSettings);
+	SessionInterface->CreateSession(0, FName("Session"), SessionSettings);
 }
 
 void UNWGameInstance::SearchServers()

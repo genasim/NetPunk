@@ -15,6 +15,8 @@ struct FServerInfo
 public:
 	UPROPERTY(BlueprintReadOnly)
 	FString ServerName;
+	// UPROPERTY(BlueprintReadOnly)
+	// FString PlayerCount;
 	UPROPERTY(BlueprintReadOnly)
 	int CurrentPlayers;
 	UPROPERTY(BlueprintReadOnly)
@@ -49,7 +51,7 @@ protected:
 	FAddServerSlotDelegate AddServerSlotDelegate;
 	
 	UFUNCTION(BlueprintCallable)
-	void HostGame();
+	void HostGame(FString ServerName, FString HostName);
 	UFUNCTION(BlueprintCallable)
 	void SearchServers();
 	UFUNCTION(BlueprintCallable)
