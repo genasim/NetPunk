@@ -27,7 +27,7 @@ void UNWGameInstance::OnCreateSessionComplete(FName ServerName, bool Succeeded)
 {
 	UE_LOG(LogTemp, Warning, TEXT("OnCreateSessionComplete Delegate fired -> Success: %d"), Succeeded)
 	if (Succeeded)
-		GetWorld()->ServerTravel("/Game/ThirdPerson/Maps/ThirdPersonMap?listen");
+		GetWorld()->ServerTravel("/Game/Levels/TutorialCave?listen");
 }
 
 void UNWGameInstance::OnFindSessionComplete(bool Succeeded)
@@ -36,27 +36,38 @@ void UNWGameInstance::OnFindSessionComplete(bool Succeeded)
 	if (Succeeded)
 	{
 		const TArray<FOnlineSessionSearchResult> SearchResults = SessionSearch->SearchResults;
-		for (auto Result : SearchResults)
-		{
-			if (!Result.IsValid()) continue;
-			FServerInfo ServerInfo;
-			FString ServerName = "Empty ServerName";
-			FString HostName = "Empty HostName";
-
-			Result.Session.SessionSettings.Get(FName("SERVER_NAME_KEY"), ServerName);
-			Result.Session.SessionSettings.Get(FName("SERVER_HOSTNAME_KEY"), HostName);
-			
-			ServerInfo.ServerName = ServerName;
-			ServerInfo.CurrentPlayers = Result.Session.NumOpenPublicConnections;
-			ServerInfo.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
-			ServerInfo.PingInMs = Result.PingInMs;
-
-			AddServerSlotDelegate.Broadcast(ServerInfo);
-		}
-//
 		UE_LOG(LogTemp, Warning, TEXT("Sessions found -> %d"), SearchResults.Num())
-		// if (SearchResults.Num() >= 0)
-		// SessionInterface->JoinSession(0, "Session", SearchResults[0]);	
+		if (!SearchResults.Num())
+		{
+			ShowErrorMessage.Broadcast(TEXT("No sessions Found!"));
+			return;
+		}
+
+		if (!bQuickSearch)
+		{
+			for (auto Result : SearchResults)
+			{
+				if (!Result.IsValid()) continue;
+				FServerInfo ServerInfo;
+				FString ServerName = "Empty ServerName";
+				FString HostName = "Empty HostName";
+
+				Result.Session.SessionSettings.Get(FName("SERVER_NAME_KEY"), ServerName);
+				Result.Session.SessionSettings.Get(FName("SERVER_HOSTNAME_KEY"), HostName);
+			
+				ServerInfo.ServerName = ServerName;
+				ServerInfo.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
+				ServerInfo.CurrentPlayers = ServerInfo.MaxPlayers - Result.Session.NumOpenPublicConnections;
+				ServerInfo.PingInMs = Result.PingInMs;
+
+				AddServerSlotDelegate.Broadcast(ServerInfo);
+			}
+		}
+		else
+		{
+			const auto Index = FMath::RandRange(0,SearchResults.Num()-1);
+			SessionInterface->JoinSession(0, "Session", SearchResults[Index]);		
+		}
 	}
 }
 
@@ -103,17 +114,29 @@ void UNWGameInstance::SearchServers()
 		SessionSearch->bIsLanQuery = false;
 	else
 		SessionSearch->bIsLanQuery = true;
-	
+
+	bQuickSearch = false;
 	SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
 }
 
 void UNWGameInstance::QuickJoin()
 {
-	// const TArray<FOnlineSessionSearchResult> SearchResults = SessionSearch->SearchResults;
-	// if (SearchResults.Num())
-	// {
-	// 	const auto Index = FMath::RandRange(0,SearchResults.Num());
-	// 	SessionInterface->JoinSession(0, "Session", SearchResults[Index]);		
-	// }
-	UE_LOG(LogTemp, Warning, TEXT("Quick search ... (TODO)"))
+	UE_LOG(LogTemp, Warning, TEXT("Quick search ... "))
+	SessionSearch = MakeShareable(new FOnlineSessionSearch());
+	SessionSearch->MaxSearchResults = 10000;
+	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
+	
+	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
+		SessionSearch->bIsLanQuery = false;
+	else
+		SessionSearch->bIsLanQuery = true;
+	
+	bQuickSearch = true;
+	SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
+}
+
+void UNWGameInstance::CancelSearch()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Session search canceled"))
+	SessionInterface->CancelFindSessions();
 }

@@ -26,6 +26,7 @@ public:
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAddServerSlotDelegate, FServerInfo, ServerInfo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FShowErrorMessage, FString, ErrorMessage);
 
 /**
  * Game Instance class holding source for hosting and joining sessions
@@ -35,6 +36,8 @@ class NETGAME_API UNWGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
 
+	bool bQuickSearch = false;
+	
 public:
 	UNWGameInstance();
 
@@ -49,6 +52,8 @@ protected:
 
 	UPROPERTY(BlueprintAssignable)
 	FAddServerSlotDelegate AddServerSlotDelegate;
+	UPROPERTY(BlueprintAssignable)
+	FShowErrorMessage ShowErrorMessage;
 	
 	UFUNCTION(BlueprintCallable)
 	void HostGame(FString ServerName, FString HostName);
@@ -56,4 +61,6 @@ protected:
 	void SearchServers();
 	UFUNCTION(BlueprintCallable)
 	void QuickJoin();
+	UFUNCTION(BlueprintCallable)
+	void CancelSearch();
 };

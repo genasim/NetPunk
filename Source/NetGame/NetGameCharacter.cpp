@@ -61,30 +61,16 @@ void ANetGameCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 	
-	PlayerInputComponent->BindAxis("Move Forward / Backward", this, &ANetGameCharacter::MoveForward);
-	PlayerInputComponent->BindAxis("Move Right / Left", this, &ANetGameCharacter::MoveRight);
+	PlayerInputComponent->BindAxis("MoveForward", this, &ANetGameCharacter::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ANetGameCharacter::MoveRight);
 
 	// We have 2 versions of the rotation bindings to handle different kinds of devices differently
 	// "turn" handles devices that provide an absolute delta, such as a mouse.
 	// "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
-	PlayerInputComponent->BindAxis("Turn Right / Left Mouse", this, &APawn::AddControllerYawInput);
+	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("Turn Right / Left Gamepad", this, &ANetGameCharacter::TurnAtRate);
-	PlayerInputComponent->BindAxis("Look Up / Down Mouse", this, &APawn::AddControllerPitchInput);
+	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("Look Up / Down Gamepad", this, &ANetGameCharacter::LookUpAtRate);
-
-	// handle touch devices
-	PlayerInputComponent->BindTouch(IE_Pressed, this, &ANetGameCharacter::TouchStarted);
-	PlayerInputComponent->BindTouch(IE_Released, this, &ANetGameCharacter::TouchStopped);
-}
-
-void ANetGameCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
-{
-	Jump();
-}
-
-void ANetGameCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
-{
-	StopJumping();
 }
 
 void ANetGameCharacter::TurnAtRate(float Rate)
