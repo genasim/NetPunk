@@ -74,3 +74,10 @@ Plugins/*/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+#Additional files for documentation, archives and such
+*.docx
+*.doc
+*.rar
+*.pptx
+*.ppt

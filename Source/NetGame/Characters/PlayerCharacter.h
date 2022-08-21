@@ -12,24 +12,25 @@ class NETGAME_API APlayerCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	APlayerCharacter();
-
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	void MoveRight(float InputAxisValue);
+	UFUNCTION()
 	void MoveForward(float InputAxisValue);
-	void BeginSprint();
+	UFUNCTION()
+	void MoveRight(float InputAxisValue);
+
+	UFUNCTION(BlueprintCallable)
+	void StartSprint();
+	UFUNCTION(BlueprintCallable)
 	void EndSprint();
 
-	UPROPERTY(BlueprintReadWrite)
-	bool bIsDodging = false;
+	UPROPERTY(EditAnywhere, Category="Variables")
+	float WalkingSpeed = 380.0f;
+	UPROPERTY(EditAnywhere, Category="Variables")
+	float RunningSpeed = 800.0f;
 };
