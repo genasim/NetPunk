@@ -6,31 +6,22 @@
 #include "GameFramework/Character.h"
 #include "PlayerCharacter.generated.h"
 
+class UPlayerMovementComponent;
 UCLASS()
 class NETGAME_API APlayerCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
-	APlayerCharacter();
+	APlayerCharacter(const FObjectInitializer& ObjectInitializer);
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 protected:
 	virtual void BeginPlay() override;
-
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable, Category="PlayerMovementComponent")
+	UPlayerMovementComponent* GetPlayerMovementComponent() const;
+	
 	void MoveForward(float InputAxisValue);
-	UFUNCTION()
 	void MoveRight(float InputAxisValue);
-
-	UFUNCTION(BlueprintCallable)
-	void StartSprint();
-	UFUNCTION(BlueprintCallable)
-	void EndSprint();
-
-	UPROPERTY(EditAnywhere, Category="Variables")
-	float WalkingSpeed = 380.0f;
-	UPROPERTY(EditAnywhere, Category="Variables")
-	float RunningSpeed = 800.0f;
 };

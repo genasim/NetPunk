@@ -2,11 +2,13 @@
 
 
 #include "PlayerCharacter.h"
-
+#include "PlayerMovementComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
-APlayerCharacter::APlayerCharacter()
+APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UPlayerMovementComponent>(CharacterMovementComponentName))
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
@@ -16,8 +18,6 @@ APlayerCharacter::APlayerCharacter()
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	GetCharacterMovement()->MaxWalkSpeed = WalkingSpeed;
-	
 }
 
 void APlayerCharacter::MoveForward(float InputAxisValue)
@@ -40,21 +40,11 @@ void APlayerCharacter::MoveRight(float InputAxisValue)
 	AddMovementInput(Direction, InputAxisValue);
 }
 
-void APlayerCharacter::StartSprint()
-{
-	GetCharacterMovement()->MaxWalkSpeed = RunningSpeed;
-}
-
-void APlayerCharacter::EndSprint()
-{
-	GetCharacterMovement()->MaxWalkSpeed = WalkingSpeed;
-}
 
 // Called every frame
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
@@ -69,7 +59,15 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &APlayerCharacter::StartSprint);
-	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &APlayerCharacter::EndSprint);
+
+	PlayerInputComponent->BindAction("Dodge", IE_Pressed, GetPlayerMovementComponent(), &UPlayerMovementComponent::DoDodge);
+	PlayerInputComponent->BindAction<UPlayerMovementComponent::FSprintDelegate>
+		("Sprint", IE_Pressed, GetPlayerMovementComponent(), &UPlayerMovementComponent::SetSprinting, true);
+	PlayerInputComponent->BindAction<UPlayerMovementComponent::FSprintDelegate>
+		("Sprint", IE_Released, GetPlayerMovementComponent(), &UPlayerMovementComponent::SetSprinting, false);
 }
 
+UPlayerMovementComponent* APlayerCharacter::GetPlayerMovementComponent() const
+{
+	return static_cast<UPlayerMovementComponent*>(GetCharacterMovement());
+}
