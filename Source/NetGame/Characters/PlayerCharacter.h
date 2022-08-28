@@ -6,30 +6,22 @@
 #include "GameFramework/Character.h"
 #include "PlayerCharacter.generated.h"
 
+class UPlayerMovementComponent;
 UCLASS()
 class NETGAME_API APlayerCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
-	APlayerCharacter();
-
-	// Called every frame
+	APlayerCharacter(const FObjectInitializer& ObjectInitializer);
 	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-	void MoveRight(float InputAxisValue);
+	UFUNCTION(BlueprintCallable, Category="PlayerMovementComponent")
+	UPlayerMovementComponent* GetPlayerMovementComponent() const;
+	
 	void MoveForward(float InputAxisValue);
-	void BeginSprint();
-	void EndSprint();
-
-	UPROPERTY(BlueprintReadWrite)
-	bool bIsDodging = false;
+	void MoveRight(float InputAxisValue);
 };
