@@ -19,6 +19,7 @@ class NETGAME_API UPlayerMovementComponent : public UCharacterMovementComponent
 	DECLARE_DELEGATE_OneParam(FSprintDelegate, bool)
 	
 	friend class APlayerCharacter;
+	friend class FPlayer_SavedMove_Character;
 	
 protected:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables | Walk & Run")
@@ -39,16 +40,20 @@ protected:
 	UFUNCTION(Unreliable, Server, WithValidation)
 	void ServerSetMoveDirection(const FVector& MoveDir);
 	
+	uint8 bWantsToSprint : 1;
+	UPROPERTY(BlueprintReadOnly)
+	uint8 bWantsToDodge : 1;
+	UPROPERTY(BlueprintReadOnly)
+	FVector MoveDirection;
+	
 public:
 	UPlayerMovementComponent();
 	virtual void UpdateFromCompressedFlags(uint8 Flags) override;
 	virtual FNetworkPredictionData_Client* GetPredictionData_Client() const override;
 	virtual float GetMaxSpeed() const override;
-	
-	uint8 bWantsToSprint : 1;
-	UPROPERTY(BlueprintReadOnly, Category="Replicated Dodging")
-	uint8 bWantsToDodge : 1;
-	FVector MoveDirection;
+
+private:
+	void SetDodgeFalse() { bWantsToDodge = false; }
 };
 
 class FPlayer_SavedMove_Character : public FSavedMove_Character

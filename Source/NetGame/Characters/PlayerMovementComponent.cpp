@@ -33,29 +33,36 @@ void UPlayerMovementComponent::OnMovementUpdated(float DeltaSeconds, const FVect
 	const FVector& OldVelocity)
 {
 	Super::OnMovementUpdated(DeltaSeconds, OldLocation, OldVelocity);
-	
 	if (!CharacterOwner) return;
+	
 	if (PawnOwner->IsLocallyControlled())
-		MoveDirection = PawnOwner->GetLastMovementInputVector();
-	if (PawnOwner->GetLocalRole() < ROLE_Authority)
-		ServerSetMoveDirection(MoveDirection);
+	{
+		if (GetLastInputVector() != FVector::ZeroVector)
+			MoveDirection = PawnOwner->GetLastMovementInputVector();
+		else
+			MoveDirection = PawnOwner->GetActorForwardVector() * -1;
+		
+		if (PawnOwner->GetLocalRole() < ROLE_Authority)
+			ServerSetMoveDirection(MoveDirection);
+	}
 
 	if (!IsMovingOnGround())
 		bWantsToDodge = false;
 	else
-		FallingLateralFriction = 0;
+	{
+		FallingLateralFriction = 0.25f;
+	}
 
 	if (bWantsToDodge)
 	{
 		MoveDirection.Normalize();
 		FVector DodgeVelocity = MoveDirection * DodgeStrength;
 		DodgeVelocity.Z = 0.0f;
-
-		// if (IsMovingOnGround())
-		// 	DodgeVelocity *= GroundDodgeStrengthMult;
-		FallingLateralFriction = 5.0f;
+		FallingLateralFriction = 6.5f;
 		Launch(DodgeVelocity);
-		bWantsToDodge = false;
+
+		FTimerHandle Timer;
+		GetOwner()->GetWorldTimerManager().SetTimer(Timer, this, &UPlayerMovementComponent::SetDodgeFalse, 1.0f, false);
 	}
 }
 
