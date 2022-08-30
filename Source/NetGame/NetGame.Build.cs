@@ -15,7 +15,8 @@ public class NetGame : ModuleRules
 			"InputCore", 
 			"HeadMountedDisplay",
 			"OnlineSubsystem",
-			"OnlineSubsystemUtils"
+			"OnlineSubsystemUtils",
+			"UMG"
 		});
 	}
 }

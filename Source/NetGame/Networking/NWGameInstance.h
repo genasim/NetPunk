@@ -23,9 +23,12 @@ public:
 	int MaxPlayers;
 	UPROPERTY(BlueprintReadOnly)
 	int PingInMs;
+	UPROPERTY(BlueprintReadOnly)
+	int32 ServerArrayIndex;
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAddServerSlotDelegate, FServerInfo, ServerInfo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FIsSearchingServersDelegate, bool, IsSearching);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FShowErrorMessage, FString, ErrorMessage);
 
 /**
@@ -35,8 +38,6 @@ UCLASS()
 class NETGAME_API UNWGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
-
-	bool bQuickSearch = false;
 	
 public:
 	UNWGameInstance();
@@ -46,12 +47,14 @@ protected:
 	IOnlineSessionPtr SessionInterface;
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 
-	virtual void OnCreateSessionComplete(FName ServerName, bool Succeeded);
+	virtual void OnCreateSessionComplete(FName SessionName, bool Succeeded);
 	virtual void OnFindSessionComplete(bool Succeeded);
 	virtual void OnJoinSessionComplete(FName ServerName, EOnJoinSessionCompleteResult::Type Result);
 
 	UPROPERTY(BlueprintAssignable)
 	FAddServerSlotDelegate AddServerSlotDelegate;
+	UPROPERTY(BlueprintAssignable)
+	FIsSearchingServersDelegate IsSearchingServersDelegate;
 	UPROPERTY(BlueprintAssignable)
 	FShowErrorMessage ShowErrorMessage;
 	
@@ -60,7 +63,13 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void SearchServers();
 	UFUNCTION(BlueprintCallable)
+	void CancelSearch();
+	UFUNCTION(BlueprintCallable)
 	void QuickJoin();
 	UFUNCTION(BlueprintCallable)
-	void CancelSearch();
+	void JoinServer(int32 ArrayIndex);
+
+private:
+	bool bQuickSearch = false;
+	FName DefaultSessionName;
 };
