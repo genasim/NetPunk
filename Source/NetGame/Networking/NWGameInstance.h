@@ -8,23 +8,42 @@
 #include "NWGameInstance.generated.h"
 
 USTRUCT(BlueprintType)
+struct FCreateServerInfo
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(BlueprintReadWrite)
+	FString ServerName;
+	UPROPERTY(BlueprintReadWrite)
+	int MaxPlayers;
+	UPROPERTY(BlueprintReadWrite)
+	bool IsLan;
+};
+
+USTRUCT(BlueprintType)
 struct FServerInfo
 {
 	GENERATED_BODY()
-	
 public:
 	UPROPERTY(BlueprintReadOnly)
 	FString ServerName;
-	// UPROPERTY(BlueprintReadOnly)
-	// FString PlayerCount;
+	UPROPERTY(BlueprintReadOnly)
+	FString PlayerCountStr;
 	UPROPERTY(BlueprintReadOnly)
 	int CurrentPlayers;
 	UPROPERTY(BlueprintReadOnly)
 	int MaxPlayers;
 	UPROPERTY(BlueprintReadOnly)
+	bool isLan;
+	UPROPERTY(BlueprintReadOnly)
 	int PingInMs;
 	UPROPERTY(BlueprintReadOnly)
 	int32 ServerArrayIndex;
+	
+	void SetPlayerCount()
+	{
+		PlayerCountStr = FString(FString::FromInt(CurrentPlayers) + " / " + FString::FromInt(MaxPlayers));
+	}
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAddServerSlotDelegate, FServerInfo, ServerInfo);
@@ -50,6 +69,7 @@ protected:
 	virtual void OnCreateSessionComplete(FName SessionName, bool Succeeded);
 	virtual void OnFindSessionComplete(bool Succeeded);
 	virtual void OnJoinSessionComplete(FName ServerName, EOnJoinSessionCompleteResult::Type Result);
+	virtual void OnSessionFailure(const FUniqueNetId& NetID, ESessionFailure::Type);
 
 	UPROPERTY(BlueprintAssignable)
 	FAddServerSlotDelegate AddServerSlotDelegate;
@@ -59,7 +79,7 @@ protected:
 	FShowErrorMessage ShowErrorMessage;
 	
 	UFUNCTION(BlueprintCallable)
-	void HostGame(FString ServerName, FString HostName);
+	void HostGame(FCreateServerInfo ServerInfo);
 	UFUNCTION(BlueprintCallable)
 	void SearchServers();
 	UFUNCTION(BlueprintCallable)

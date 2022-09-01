@@ -24,6 +24,7 @@ void UNWGameInstance::Init()
 		SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UNWGameInstance::OnCreateSessionComplete);
 		SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UNWGameInstance::OnFindSessionComplete);
 		SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UNWGameInstance::OnJoinSessionComplete);
+		SessionInterface->OnSessionFailureDelegates.AddUObject(this, &UNWGameInstance::OnSessionFailure);
 	}
 }
 
@@ -79,7 +80,9 @@ void UNWGameInstance::OnFindSessionComplete(bool Succeeded)
 		ServerInfo.ServerName = ServerName;
 		ServerInfo.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
 		ServerInfo.CurrentPlayers = ServerInfo.MaxPlayers - Result.Session.NumOpenPublicConnections;
+		ServerInfo.SetPlayerCount();
 		ServerInfo.PingInMs = Result.PingInMs;
+		ServerInfo.isLan = Result.Session.SessionSettings.bIsLANMatch;
 		ServerInfo.ServerArrayIndex = ArrayIndex;
 
 		UE_LOG(LogTemp, Warning, TEXT("Server Name: %s | Server Index: %d"), *ServerInfo.ServerName, ArrayIndex)
@@ -102,7 +105,12 @@ void UNWGameInstance::OnJoinSessionComplete(FName ServerName, EOnJoinSessionComp
 	}
 }
 
-void UNWGameInstance::HostGame(FString ServerName, FString HostName)
+void UNWGameInstance::OnSessionFailure(const FUniqueNetId& NetID, ESessionFailure::Type)
+{
+	// if ()
+}
+
+void UNWGameInstance::HostGame(FCreateServerInfo ServerInfo)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Create Session"))
 	FOnlineSessionSettings SessionSettings;
@@ -110,11 +118,13 @@ void UNWGameInstance::HostGame(FString ServerName, FString HostName)
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.bShouldAdvertise = true;
 	SessionSettings.bAllowJoinInProgress = true;
-	SessionSettings.NumPublicConnections = 3;
+	SessionSettings.NumPublicConnections = ServerInfo.MaxPlayers;
+
+	// TODO: Set to use ServerInfo.IsLan
 	SessionSettings.bIsLANMatch = (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL") ? true : false;
 
-	SessionSettings.Set(FName("SERVER_NAME_KEY"), ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-	SessionSettings.Set(FName("SERVER_HOSTNAME_KEY"), HostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	SessionSettings.Set(FName("SERVER_NAME_KEY"), ServerInfo.ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	// SessionSettings.Set(FName("SERVER_HOSTNAME_KEY"), HostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	
 	SessionInterface->CreateSession(0, DefaultSessionName, SessionSettings);
 }
@@ -127,11 +137,7 @@ void UNWGameInstance::SearchServers()
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
 	SessionSearch->MaxSearchResults = 10000;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
-	
-	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
-		SessionSearch->bIsLanQuery = false;
-	else
-		SessionSearch->bIsLanQuery = true;
+	SessionSearch->bIsLanQuery = IOnlineSubsystem::Get()->GetSubsystemName() != "NULL" ? false : true;	
 
 	bQuickSearch = false;
 	SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
@@ -152,11 +158,7 @@ void UNWGameInstance::QuickJoin()
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
 	SessionSearch->MaxSearchResults = 10000;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
-	
-	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
-		SessionSearch->bIsLanQuery = false;
-	else
-		SessionSearch->bIsLanQuery = true;
+	SessionSearch->bIsLanQuery = IOnlineSubsystem::Get()->GetSubsystemName() != "NULL" ? false : true;
 	
 	bQuickSearch = true;
 	SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
