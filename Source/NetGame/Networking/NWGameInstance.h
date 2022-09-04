@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "Interfaces/OnlineSessionInterface.h"
+#include "NetGame/Characters/PlayerCharacter.h"
 #include "NWGameInstance.generated.h"
 
 USTRUCT(BlueprintType)
@@ -92,4 +93,13 @@ protected:
 private:
 	bool bQuickSearch = false;
 	FName DefaultSessionName;
+
+public:
+	UFUNCTION(BlueprintCallable)
+	void SaveGame();
+	UFUNCTION(BlueprintCallable)
+	void LoadGame();
+private:
+	/// @brief Returns the APlayerCharacter for this UNWGameInstance
+	APlayerCharacter* GetLocalPlayerCharacter() const;
 };

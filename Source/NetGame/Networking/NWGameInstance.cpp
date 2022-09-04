@@ -7,6 +7,8 @@
 #include "OnlineSubsystem.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "NetGame/NETSaveGame.h"
+#include "NetGame/Characters/PlayerCharacter.h"
 
 UNWGameInstance::UNWGameInstance()
 {
@@ -34,7 +36,7 @@ void UNWGameInstance::OnCreateSessionComplete(FName SessionName, bool Succeeded)
 	if (!Succeeded)
 		return;
 
-	UWidgetBlueprintLibrary::SetInputMode_GameOnly(GetWorld()->GetFirstLocalPlayerFromController()->PlayerController);
+	UWidgetBlueprintLibrary::SetInputMode_GameOnly(GetWorld()->GetFirstPlayerController());
 	GetWorld()->ServerTravel("/Game/Levels/TutorialCave?listen");
 }
 
@@ -176,4 +178,41 @@ void UNWGameInstance::JoinServer(int32 ArrayIndex)
 
 	UE_LOG(LogTemp, Warning, TEXT("JOINING SERVER AT INDEX %d"), ArrayIndex);
 	SessionInterface->JoinSession(0, DefaultSessionName, Result);	
+}
+
+void UNWGameInstance::SaveGame()
+{
+	UNETSaveGame* SaveGame = Cast<UNETSaveGame>(UGameplayStatics::CreateSaveGameObject(UNETSaveGame::StaticClass()));
+	if (!SaveGame)
+	{
+		ShowErrorMessage.Broadcast(TEXT("Could not save game"));
+		return;
+	}
+	
+	// Set data on the SaveGame object.
+	if (GetLocalPlayerCharacter()->GetLocalRole() == ROLE_Authority)
+		SaveGame->SaveLocalPlayerData(GetLocalPlayerCharacter());
+
+	// Save the data immediately.
+	if (UGameplayStatics::SaveGameToSlot(SaveGame, TEXT("SaveSlot_0"), 0))
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Game saved"));
+}
+
+void UNWGameInstance::LoadGame()
+{
+	UNETSaveGame* SaveGame = Cast<UNETSaveGame>(UGameplayStatics::LoadGameFromSlot(TEXT("SaveSlot_0"), 0));
+	if (!SaveGame)
+	{
+		ShowErrorMessage.Broadcast(TEXT("Could not load game"));
+		return;
+	}
+	SaveGame->LoadLocalPlayerData(GetLocalPlayerCharacter());
+}
+
+///////////////////////////////////////
+///		Helper functions			///
+
+APlayerCharacter* UNWGameInstance::GetLocalPlayerCharacter() const
+{
+	return Cast<APlayerCharacter>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetPawn());
 }

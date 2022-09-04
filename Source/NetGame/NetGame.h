@@ -3,3 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "NETSaveGame.h"
+#include "Kismet/GameplayStatics.h"
