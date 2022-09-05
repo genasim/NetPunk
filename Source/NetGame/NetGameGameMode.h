@@ -13,6 +13,8 @@ class ANetGameGameMode : public AGameModeBase
 
 public:
 	ANetGameGameMode();
+
+	virtual void InitGameState() override;
 };
 
 

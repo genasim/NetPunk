@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Characters/PlayerCharacter.h"
 #include "GameFramework/SaveGame.h"
 #include "NETSaveGame.generated.h"
 
@@ -16,8 +17,8 @@ class NETGAME_API UNETSaveGame : public USaveGame
 
 public:
 	UNETSaveGame();
-	void SaveLocalPlayerData(const ACharacter* LocalCharacter);
-	void LoadLocalPlayerData(const ACharacter* LocalCharacter);
+	void SaveLocalPlayerData(APlayerCharacter* LocalCharacter);
+	void LoadLocalPlayerData(APlayerCharacter* LocalCharacter);
 
 private:
 	UPROPERTY(VisibleAnywhere, Category="Saved Data")
@@ -30,4 +31,6 @@ private:
 	FDateTime CreationTime;
 	UPROPERTY(VisibleAnywhere, Category="Saved Data")
 	FVector PlayerLocation;
+	UPROPERTY(VisibleAnywhere, Category="Saved Data")
+	FString SavedLevelName;
 };

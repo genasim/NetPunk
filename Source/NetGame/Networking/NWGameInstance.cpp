@@ -73,11 +73,8 @@ void UNWGameInstance::OnFindSessionComplete(bool Succeeded)
 			
 		FServerInfo ServerInfo;
 		FString ServerName = "Empty ServerName";
-		FString HostName = "Empty HostName";
-
 		Result.Session.SessionSettings.Get(FName("SERVER_NAME_KEY"), ServerName);
-		Result.Session.SessionSettings.Get(FName("SERVER_HOSTNAME_KEY"), HostName);
-		
+
 		ArrayIndex++;
 		ServerInfo.ServerName = ServerName;
 		ServerInfo.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
@@ -126,7 +123,6 @@ void UNWGameInstance::HostGame(FCreateServerInfo ServerInfo)
 	SessionSettings.bIsLANMatch = (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL") ? true : false;
 
 	SessionSettings.Set(FName("SERVER_NAME_KEY"), ServerInfo.ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-	// SessionSettings.Set(FName("SERVER_HOSTNAME_KEY"), HostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	
 	SessionInterface->CreateSession(0, DefaultSessionName, SessionSettings);
 }
@@ -139,17 +135,20 @@ void UNWGameInstance::SearchServers()
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
 	SessionSearch->MaxSearchResults = 10000;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
-	SessionSearch->bIsLanQuery = IOnlineSubsystem::Get()->GetSubsystemName() != "NULL" ? false : true;	
-
+	SessionSearch->bIsLanQuery = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
+	
 	bQuickSearch = false;
 	SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
 }
 
 void UNWGameInstance::CancelSearch()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Session search canceled"))
 	IsSearchingServersDelegate.Broadcast(false);
-	SessionInterface->CancelFindSessions();
+	if (SessionSearch->SearchState == EOnlineAsyncTaskState::InProgress)
+	{
+		SessionInterface->CancelFindSessions();
+		UE_LOG(LogTemp, Warning, TEXT("Session search canceled"))
+	}
 }
 
 void UNWGameInstance::QuickJoin()
@@ -180,34 +179,37 @@ void UNWGameInstance::JoinServer(int32 ArrayIndex)
 	SessionInterface->JoinSession(0, DefaultSessionName, Result);	
 }
 
-void UNWGameInstance::SaveGame()
-{
-	UNETSaveGame* SaveGame = Cast<UNETSaveGame>(UGameplayStatics::CreateSaveGameObject(UNETSaveGame::StaticClass()));
-	if (!SaveGame)
-	{
-		ShowErrorMessage.Broadcast(TEXT("Could not save game"));
-		return;
-	}
-	
-	// Set data on the SaveGame object.
-	if (GetLocalPlayerCharacter()->GetLocalRole() == ROLE_Authority)
-		SaveGame->SaveLocalPlayerData(GetLocalPlayerCharacter());
-
-	// Save the data immediately.
-	if (UGameplayStatics::SaveGameToSlot(SaveGame, TEXT("SaveSlot_0"), 0))
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Game saved"));
-}
-
-void UNWGameInstance::LoadGame()
-{
-	UNETSaveGame* SaveGame = Cast<UNETSaveGame>(UGameplayStatics::LoadGameFromSlot(TEXT("SaveSlot_0"), 0));
-	if (!SaveGame)
-	{
-		ShowErrorMessage.Broadcast(TEXT("Could not load game"));
-		return;
-	}
-	SaveGame->LoadLocalPlayerData(GetLocalPlayerCharacter());
-}
+// void UNWGameInstance::SaveGame()
+// {
+// 	UNETSaveGame* SaveGame = Cast<UNETSaveGame>(UGameplayStatics::CreateSaveGameObject(UNETSaveGame::StaticClass()));
+// 	if (!SaveGame)
+// 	{
+// 		ShowErrorMessage.Broadcast(TEXT("Could not save game"));
+// 		return;
+// 	}
+// 	
+// 	// Set data on the SaveGame object.
+// 	if (GetLocalPlayerCharacter()->GetLocalRole() < ROLE_Authority)
+// 		return;
+//
+// 	SaveGame->SaveLocalPlayerData(GetLocalPlayerCharacter());
+// 	// Save the data immediately.
+// 	if (UGameplayStatics::SaveGameToSlot(SaveGame, TEXT("SaveSlot_0"), 0))
+// 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Game saved"));
+// }
+//
+// void UNWGameInstance::LoadGame()
+// {
+// 	UNETSaveGame* SaveGame = Cast<UNETSaveGame>(UGameplayStatics::LoadGameFromSlot(TEXT("SaveSlot_0"), 0));
+// 	if (!SaveGame)
+// 	{
+// 		ShowErrorMessage.Broadcast(TEXT("Could not load game"));
+// 		return;
+// 	}
+//
+// 	// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, (TEXT("%s"), SaveGame->PlayerLocation.ToString()));	
+// 	SaveGame->LoadLocalPlayerData(GetLocalPlayerCharacter());
+// }
 
 ///////////////////////////////////////
 ///		Helper functions			///

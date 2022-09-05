@@ -3,21 +3,24 @@
 
 #include "NETSaveGame.h"
 
-#include "GameFramework/Character.h"
+#include "Kismet/GameplayStatics.h"
 
 UNETSaveGame::UNETSaveGame()
 {
 	ServerSlotName = TEXT("TestServerSlot");
 	UserIndex = 0;
 	PlayerLocation = FVector(0.0f, 0.0f, 0.0f);
+	SavedLevelName = "";
 }
 
-void UNETSaveGame::SaveLocalPlayerData(const ACharacter* LocalCharacter)
+void UNETSaveGame::SaveLocalPlayerData(APlayerCharacter* LocalCharacter)
 {
 	PlayerLocation = LocalCharacter->GetActorLocation();
+	SavedLevelName = UGameplayStatics::GetCurrentLevelName(GetWorld());
 }
 
-void UNETSaveGame::LoadLocalPlayerData(const ACharacter* LocalCharacter)
+void UNETSaveGame::LoadLocalPlayerData(APlayerCharacter* LocalCharacter)
 {
-	LocalCharacter->GetActorLocation() = PlayerLocation;
+	LocalCharacter->SetActorLocation(PlayerLocation);
+	GetWorld()->ServerTravel(SavedLevelName);
 }

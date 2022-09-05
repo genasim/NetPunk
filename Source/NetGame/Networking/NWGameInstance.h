@@ -94,11 +94,12 @@ private:
 	bool bQuickSearch = false;
 	FName DefaultSessionName;
 
-public:
-	UFUNCTION(BlueprintCallable)
-	void SaveGame();
-	UFUNCTION(BlueprintCallable)
-	void LoadGame();
+// public:
+// 	UFUNCTION(BlueprintCallable)
+// 	void SaveGame();
+// 	UFUNCTION(BlueprintCallable)
+// 	void LoadGame();
+
 private:
 	/// @brief Returns the APlayerCharacter for this UNWGameInstance
 	APlayerCharacter* GetLocalPlayerCharacter() const;
