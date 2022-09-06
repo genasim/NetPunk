@@ -116,6 +116,7 @@ TArray<FSaveMetadata> USaveManager::GetAllSaveMetaData()
 	TArray<FSaveMetadata> Metadata;
 	USaveGameMetadata* SaveGameMetadata = Cast<USaveGameMetadata>(UGameplayStatics::LoadGameFromSlot(MetaDataSaveSlot, 0));
 
+	// Allocate exact memory for array  
 	Metadata.Reserve(SaveGameMetadata->SavedGamesMetaData.Num());
 	// Add each save game's Metadata to the return array
 	for (const auto& SavedGame : SaveGameMetadata->SavedGamesMetaData)
