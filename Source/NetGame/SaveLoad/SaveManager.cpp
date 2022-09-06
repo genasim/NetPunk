@@ -41,6 +41,7 @@ void USaveManager::SaveGame()
 
 	// Update the save's metadata
 	USaveGameMetadata* SaveGameMetadata = Cast<USaveGameMetadata>(UGameplayStatics::LoadGameFromSlot(MetaDataSaveSlot, 0));
+	// todo: remove comments
 	// FSaveMetaData& SaveMetaData = SaveGameMetaData->SavedGamesMetaData.FindOrAdd(CurrentSaveSlot);
 	// SaveMetaData.SlotName = CurrentSaveSlot;
 	// SaveMetaData.DateTime = FDateTime::Now();
@@ -59,6 +60,7 @@ void USaveManager::LoadGame()
 	if (!SaveGameData)
 	{
 		SaveGame();		// No Saves exist for this slot, so create a default one
+		// todo: remove comments
 		SaveGameData = Cast<USaveGameData>(UGameplayStatics::LoadGameFromSlot(CurrentSaveSlot, 0));
 		// LoadGame();
 	}

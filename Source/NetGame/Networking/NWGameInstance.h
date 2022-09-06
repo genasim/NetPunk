@@ -70,37 +70,39 @@ protected:
 	virtual void OnCreateSessionComplete(FName SessionName, bool Succeeded);
 	virtual void OnFindSessionComplete(bool Succeeded);
 	virtual void OnJoinSessionComplete(FName ServerName, EOnJoinSessionCompleteResult::Type Result);
-	virtual void OnSessionFailure(const FUniqueNetId& NetID, ESessionFailure::Type);
 
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(BlueprintAssignable, Category="Networking")
 	FAddServerSlotDelegate AddServerSlotDelegate;
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(BlueprintAssignable, Category="Networking")
 	FIsSearchingServersDelegate IsSearchingServersDelegate;
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category="Networking")
 	FShowErrorMessage ShowErrorMessage;
 	
-	UFUNCTION(BlueprintCallable)
-	void HostGame(FCreateServerInfo ServerInfo);
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category="Networking")
+	void HostGame(FCreateServerInfo CreateServerInfo);
+	UFUNCTION(BlueprintCallable, Category="Networking")
 	void SearchServers();
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category="Networking")
 	void CancelSearch();
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category="Networking")
 	void QuickJoin();
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category="Networking")
 	void JoinServer(int32 ArrayIndex);
 
 private:
 	bool bQuickSearch = false;
 	FName DefaultSessionName;
 
+	// todo: remove comments
 // public:
 // 	UFUNCTION(BlueprintCallable)
 // 	void SaveGame();
 // 	UFUNCTION(BlueprintCallable)
 // 	void LoadGame();
 
-private:
+protected:
 	/// @brief Returns the APlayerCharacter for this UNWGameInstance
+	UFUNCTION(BlueprintPure, Category="Networking")
 	APlayerCharacter* GetLocalPlayerCharacter() const;
+	
 };
