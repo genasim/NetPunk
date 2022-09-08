@@ -17,5 +17,5 @@ class NETGAME_API USaveGameMetadata : public USaveGame
 
 public:
 	UPROPERTY(VisibleAnywhere, Category="Save & Load")
-	TMap<FString, FSaveMetadata> SavedGamesMetaData;
+	TMap<FString, FSaveMetadata> SavedGamesMetadata;
 };

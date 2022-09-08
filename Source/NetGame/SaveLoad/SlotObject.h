@@ -7,7 +7,7 @@
 #include "UObject/NoExportTypes.h"
 #include "SlotObject.generated.h"
 
-class USlotObject; // todo: remove if problems occur
+class USlotObject;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSlotDeleted, USlotObject*, SlotToDelete);
 
 /**

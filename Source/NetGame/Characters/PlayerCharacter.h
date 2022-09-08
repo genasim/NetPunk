@@ -24,4 +24,5 @@ protected:
 	
 	void MoveForward(float InputAxisValue);
 	void MoveRight(float InputAxisValue);
+	
 };

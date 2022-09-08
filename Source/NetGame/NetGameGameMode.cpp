@@ -9,8 +9,16 @@ ANetGameGameMode::ANetGameGameMode()
 
 void ANetGameGameMode::InitGameState()
 {
+	Super::InitGameState();
+}
+
+APawn* ANetGameGameMode::SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer,
+	const FTransform& SpawnTransform)
+{
+	APawn* Pawn = Super::SpawnDefaultPawnAtTransform_Implementation(NewPlayer, SpawnTransform);
+
 	USaveManager::QueryAllSaveInterfaces();
 	USaveManager::LoadGame();
-	
-	Super::InitGameState();
+
+	return Pawn;
 }

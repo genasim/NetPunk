@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "Runtime/CoreUObject/Public/UObject/Class.h"
 #include "SaveMetadata.generated.h"
 
 USTRUCT(BlueprintType)

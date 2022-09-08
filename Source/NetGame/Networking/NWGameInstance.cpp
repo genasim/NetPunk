@@ -11,7 +11,7 @@
 #include "NetGame/SaveLoad/SaveManager.h"
 
 UNWGameInstance::UNWGameInstance()
-{
+{	
 	DefaultSessionName = "My Session Name";
 }
 
@@ -21,7 +21,8 @@ void UNWGameInstance::Init()
 
 	USaveManager::Init();
 	
-	if (!IOnlineSubsystem::Get()) return;
+	if (IOnlineSubsystem::Get() == nullptr)
+		return;
 
 	SessionInterface = IOnlineSubsystem::Get()->GetSessionInterface();
 	if (SessionInterface.IsValid())
@@ -39,7 +40,6 @@ void UNWGameInstance::OnCreateSessionComplete(FName SessionName, bool Succeeded)
 		return;
 
 	GetWorld()->ServerTravel("/Game/Levels/TutorialCave?listen");
-	UWidgetBlueprintLibrary::SetInputMode_GameOnly(GetWorld()->GetFirstPlayerController());
 }
 
 void UNWGameInstance::OnFindSessionComplete(bool Succeeded)
@@ -102,7 +102,6 @@ void UNWGameInstance::OnJoinSessionComplete(FName ServerName, EOnJoinSessionComp
 			return;
 		
 		PlayerController->ClientTravel(JoinAddress, ETravelType::TRAVEL_Absolute);
-		UWidgetBlueprintLibrary::SetInputMode_GameOnly(GetWorld()->GetFirstLocalPlayerFromController()->PlayerController);
 	}
 }
 
@@ -110,16 +109,16 @@ void UNWGameInstance::HostGame(FCreateServerInfo CreateServerInfo)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Create Session"))
 	FOnlineSessionSettings SessionSettings;
+	auto& [ServerName, MaxPlayers, bIsLan] = CreateServerInfo;
+	
+	SessionSettings.Set(FName("SERVER_NAME_KEY"), ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	SessionSettings.NumPublicConnections = MaxPlayers;
+	SessionSettings.bIsLANMatch = bIsLan;
+	// SessionSettings.bIsLANMatch = (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL") ? true : false;
 	SessionSettings.bIsDedicated = false;
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.bShouldAdvertise = true;
 	SessionSettings.bAllowJoinInProgress = true;
-	SessionSettings.NumPublicConnections = CreateServerInfo.MaxPlayers;
-
-	// TODO: Set to use ServerInfo.IsLan
-	SessionSettings.bIsLANMatch = (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL") ? true : false;
-
-	SessionSettings.Set(FName("SERVER_NAME_KEY"), CreateServerInfo.ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	
 	SessionInterface->CreateSession(0, DefaultSessionName, SessionSettings);
 }
@@ -173,38 +172,6 @@ void UNWGameInstance::JoinServer(int32 ArrayIndex)
 	SessionInterface->JoinSession(0, DefaultSessionName, Result);	
 }
 
-// todo: remove comments
-// void UNWGameInstance::SaveGame()
-// {
-// 	UNETSaveGame* SaveGame = Cast<UNETSaveGame>(UGameplayStatics::CreateSaveGameObject(UNETSaveGame::StaticClass()));
-// 	if (!SaveGame)
-// 	{
-// 		ShowErrorMessage.Broadcast(TEXT("Could not save game"));
-// 		return;
-// 	}
-// 	
-// 	// Set data on the SaveGame object.
-// 	if (GetLocalPlayerCharacter()->GetLocalRole() < ROLE_Authority)
-// 		return;
-//
-// 	SaveGame->SaveLocalPlayerData(GetLocalPlayerCharacter());
-// 	// Save the data immediately.
-// 	if (UGameplayStatics::SaveGameToSlot(SaveGame, TEXT("SaveSlot_0"), 0))
-// 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Game saved"));
-// }
-//
-// void UNWGameInstance::LoadGame()
-// {
-// 	UNETSaveGame* SaveGame = Cast<UNETSaveGame>(UGameplayStatics::LoadGameFromSlot(TEXT("SaveSlot_0"), 0));
-// 	if (!SaveGame)
-// 	{
-// 		ShowErrorMessage.Broadcast(TEXT("Could not load game"));
-// 		return;
-// 	}
-//
-// 	// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, (TEXT("%s"), SaveGame->PlayerLocation.ToString()));	
-// 	SaveGame->LoadLocalPlayerData(GetLocalPlayerCharacter());
-// }
 
 ///////////////////////////////////////
 ///		Helper functions			///

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SaveInterface.h"
 #include "SaveMetadata.h"
 #include "UObject/NoExportTypes.h"
 #include "SaveManager.generated.h"
@@ -48,11 +49,13 @@ public:
 
 	/// @brief Get all save games
 	UFUNCTION(BlueprintPure, Category="Save & Load")
-	static TArray<FSaveMetadata> GetAllSaveMetaData();
+	static TArray<FSaveMetadata> GetAllSaveMetadata();
 
 private:
 	static FString CurrentSaveSlot;
-	inline static const FString MetaDataSaveSlot = "SaveGameMetaData";
-	static const int32 MaxServerSlots = 15;
+	/// @brief All actors in the game that implement the save interface
+	static TArray<TScriptInterface<ISaveInterface>> SaveInterfaces;
 
+	inline static const FString MetadataSaveSlot = "SaveGameMetadata";
+	static const int32 MaxSaveSlots = 15;
 };

@@ -93,13 +93,6 @@ private:
 	bool bQuickSearch = false;
 	FName DefaultSessionName;
 
-	// todo: remove comments
-// public:
-// 	UFUNCTION(BlueprintCallable)
-// 	void SaveGame();
-// 	UFUNCTION(BlueprintCallable)
-// 	void LoadGame();
-
 protected:
 	/// @brief Returns the APlayerCharacter for this UNWGameInstance
 	UFUNCTION(BlueprintPure, Category="Networking")

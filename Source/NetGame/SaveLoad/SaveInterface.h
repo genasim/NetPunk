@@ -22,4 +22,11 @@ class NETGAME_API ISaveInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
+	/// @brief Get a unique name to use when saving
+	UFUNCTION(BlueprintNativeEvent, Category="Save & Load | SaveInterface")
+	FString GetUniqueSaveName();
+
+	/// @brief Called right before the owning actor is saved
+	UFUNCTION(BlueprintNativeEvent, Category="Save & Load | SaveInterface")
+	void OnBeforeSave(); 
 };

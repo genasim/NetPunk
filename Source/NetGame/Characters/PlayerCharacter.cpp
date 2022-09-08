@@ -3,7 +3,7 @@
 
 #include "PlayerCharacter.h"
 #include "PlayerMovementComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
@@ -17,6 +17,8 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	UWidgetBlueprintLibrary::SetInputMode_GameOnly(Cast<APlayerController>(Controller));
+	// LoadSavedData();
 }
 
 void APlayerCharacter::MoveForward(float InputAxisValue)
