@@ -18,12 +18,14 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	UWidgetBlueprintLibrary::SetInputMode_GameOnly(Cast<APlayerController>(Controller));
-	// LoadSavedData();
+
+	LoadSavedParameters();
 }
 
 void APlayerCharacter::MoveForward(float InputAxisValue)
 {
-	if (Controller == nullptr || !InputAxisValue) return;
+	if (Controller == nullptr || !InputAxisValue)
+		return;
 	
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0,Rotation.Yaw,0);
@@ -33,14 +35,14 @@ void APlayerCharacter::MoveForward(float InputAxisValue)
 
 void APlayerCharacter::MoveRight(float InputAxisValue)
 {
-	if (Controller == nullptr || !InputAxisValue) return;
+	if (Controller == nullptr || !InputAxisValue)
+		return;
 	
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0,Rotation.Yaw,0);
 	const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 	AddMovementInput(Direction, InputAxisValue);
 }
-
 
 // Called every frame
 void APlayerCharacter::Tick(float DeltaTime)
@@ -66,6 +68,33 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		("Sprint", IE_Pressed, GetPlayerMovementComponent(), &UPlayerMovementComponent::SetSprinting, true);
 	PlayerInputComponent->BindAction<UPlayerMovementComponent::FSprintDelegate>
 		("Sprint", IE_Released, GetPlayerMovementComponent(), &UPlayerMovementComponent::SetSprinting, false);
+}
+
+void APlayerCharacter::OnBeforeSave_Implementation()
+{
+	ISaveInterface::OnBeforeSave_Implementation();
+	if (!IsHostCharacter())
+		return;
+	
+	PlayerTransform = GetActorTransform();
+}
+
+void APlayerCharacter::LoadSavedParameters()
+{
+	 if (!IsHostCharacter())
+	 	return;					
+	
+	if (PlayerTransform.GetLocation() != FVector::ZeroVector)
+		SetActorTransform(PlayerTransform);
+}
+
+
+//////////////////////////////////////////
+//		Helper Functions
+
+bool APlayerCharacter::IsHostCharacter() const
+{
+	return GetLocalRole() == ROLE_Authority && IsLocallyControlled();
 }
 
 UPlayerMovementComponent* APlayerCharacter::GetPlayerMovementComponent() const

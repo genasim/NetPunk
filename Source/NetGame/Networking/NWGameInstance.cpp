@@ -6,12 +6,12 @@
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystem.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
+#include "GameFramework/GameModeBase.h"
 #include "Kismet/GameplayStatics.h"
-#include "NetGame/Characters/PlayerCharacter.h"
 #include "NetGame/SaveLoad/SaveManager.h"
 
 UNWGameInstance::UNWGameInstance()
-{	
+{
 	DefaultSessionName = "My Session Name";
 }
 
@@ -39,7 +39,7 @@ void UNWGameInstance::OnCreateSessionComplete(FName SessionName, bool Succeeded)
 	if (!Succeeded)
 		return;
 
-	GetWorld()->ServerTravel("/Game/Levels/TutorialCave?listen");
+	GetWorld()->ServerTravel("/Game/Levels/" + LevelToOpen + "?listen");
 }
 
 void UNWGameInstance::OnFindSessionComplete(bool Succeeded)
@@ -80,7 +80,7 @@ void UNWGameInstance::OnFindSessionComplete(bool Succeeded)
 		ArrayIndex++;
 		ServerInfo.ServerName = ServerName;
 		ServerInfo.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
-		ServerInfo.CurrentPlayers = ServerInfo.MaxPlayers - Result.Session.NumOpenPublicConnections;
+		ServerInfo.CurrentPlayers = UGameplayStatics::GetGameMode(GetWorld())->GetNumPlayers();
 		ServerInfo.SetPlayerCount();
 		ServerInfo.PingInMs = Result.PingInMs;
 		ServerInfo.isLan = Result.Session.SessionSettings.bIsLANMatch;
@@ -101,13 +101,16 @@ void UNWGameInstance::OnJoinSessionComplete(FName ServerName, EOnJoinSessionComp
 		if (JoinAddress == "")
 			return;
 		
-		PlayerController->ClientTravel(JoinAddress, ETravelType::TRAVEL_Absolute);
+		PlayerController->ClientTravel(JoinAddress, TRAVEL_Absolute);
 	}
 }
 
-void UNWGameInstance::HostGame(FCreateServerInfo CreateServerInfo)
+void UNWGameInstance::HostGame(FCreateServerInfo CreateServerInfo, FString OpenLevelName)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Create Session"))
+
+	this->LevelToOpen = OpenLevelName;
+	
 	FOnlineSessionSettings SessionSettings;
 	auto& [ServerName, MaxPlayers, bIsLan] = CreateServerInfo;
 	
@@ -176,7 +179,15 @@ void UNWGameInstance::JoinServer(int32 ArrayIndex)
 ///////////////////////////////////////
 ///		Helper functions			///
 
-APlayerCharacter* UNWGameInstance::GetLocalPlayerCharacter() const
+APlayerCharacter* UNWGameInstance::GetLocalPlayerCharacter()
 {
-	return Cast<APlayerCharacter>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetPawn());
+	if (GEngine != nullptr)
+		return Cast<APlayerCharacter>(UGameplayStatics::GetPlayerController(GEngine->GameViewport->GetWorld(), 0)->GetPawn());
+	return nullptr;
 }
+
+void UNWGameInstance::ServerTravelBP_Implementation(const FString& LevelAddress, const bool Absolute, const bool ShouldSkipGameNotify)
+{
+	GetWorld()->ServerTravel("/Game/Levels/" + LevelAddress + "?listen", Absolute, ShouldSkipGameNotify);
+}
+

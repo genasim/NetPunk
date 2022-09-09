@@ -43,6 +43,7 @@ void USaveManager::SaveGame()
 	// Create a new save game data instance
 	USaveGameData* SaveGameData = Cast<USaveGameData>(UGameplayStatics::CreateSaveGameObject(USaveGameData::StaticClass()));
 
+	QueryAllSaveInterfaces();
 	// Go over all actors that need to be saved and save them
 	for (auto& SaveInterface : SaveInterfaces)
 	{
@@ -54,10 +55,9 @@ void USaveManager::SaveGame()
 
 		// Find the object's save data, using it's unique name
 		FString UniqueSaveName = SaveInterface->Execute_GetUniqueSaveName(SaveInterface.GetObject());
-		// auto& [Data] = SaveGameData->SerialisedData.Add(UniqueSaveName);
-		FSaveData& SaveData = SaveGameData->SerialisedData.Add(UniqueSaveName);
+		auto& [Data] = SaveGameData->SerialisedData.Add(UniqueSaveName);
 		
-		FMemoryWriter MemoryWriter = FMemoryWriter(SaveData.Data);
+		FMemoryWriter MemoryWriter = FMemoryWriter(Data);
 		MemoryWriter.ArIsSaveGame = true;
 
 		SaveInterface.GetObject()->Serialize(MemoryWriter);

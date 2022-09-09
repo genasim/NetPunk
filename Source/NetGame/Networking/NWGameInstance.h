@@ -79,7 +79,7 @@ protected:
 	FShowErrorMessage ShowErrorMessage;
 	
 	UFUNCTION(BlueprintCallable, Category="Networking")
-	void HostGame(FCreateServerInfo CreateServerInfo);
+	void HostGame(FCreateServerInfo CreateServerInfo, FString OpenLevelName);
 	UFUNCTION(BlueprintCallable, Category="Networking")
 	void SearchServers();
 	UFUNCTION(BlueprintCallable, Category="Networking")
@@ -92,10 +92,13 @@ protected:
 private:
 	bool bQuickSearch = false;
 	FName DefaultSessionName;
+	FString LevelToOpen = "TutorialCave";
 
-protected:
+public:
 	/// @brief Returns the APlayerCharacter for this UNWGameInstance
 	UFUNCTION(BlueprintPure, Category="Networking")
-	APlayerCharacter* GetLocalPlayerCharacter() const;
-	
+	static APlayerCharacter* GetLocalPlayerCharacter();
+
+	UFUNCTION(Server, Reliable, BlueprintCallable, BlueprintAuthorityOnly, Category="Networking")
+	void ServerTravelBP(const FString& LevelAddress, const bool Absolute, const bool ShouldSkipGameNotify);
 };
