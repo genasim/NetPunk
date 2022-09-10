@@ -71,7 +71,7 @@ Saved/*
 
 # Compiled source files for the engine to use
 Intermediate/*
-Plugins/*/RiderLink/*
+Plugins/Developer/RiderLink
 
 # Cache files for the editor to use
 DerivedDataCache/*
@@ -82,3 +82,4 @@ DerivedDataCache/*
 *.rar
 *.pptx
 *.ppt
+
