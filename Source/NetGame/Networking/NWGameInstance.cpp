@@ -6,7 +6,9 @@
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystem.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
+#include "GameFramework/GameModeBase.h"
 #include "Kismet/GameplayStatics.h"
+#include "NetGame/SaveLoad/SaveManager.h"
 
 UNWGameInstance::UNWGameInstance()
 {
@@ -16,7 +18,11 @@ UNWGameInstance::UNWGameInstance()
 void UNWGameInstance::Init()
 {
 	Super::Init();
-	if (!IOnlineSubsystem::Get()) return;
+
+	USaveManager::Init();
+	
+	if (IOnlineSubsystem::Get() == nullptr)
+		return;
 
 	SessionInterface = IOnlineSubsystem::Get()->GetSessionInterface();
 	if (SessionInterface.IsValid())
@@ -24,7 +30,6 @@ void UNWGameInstance::Init()
 		SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UNWGameInstance::OnCreateSessionComplete);
 		SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UNWGameInstance::OnFindSessionComplete);
 		SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UNWGameInstance::OnJoinSessionComplete);
-		SessionInterface->OnSessionFailureDelegates.AddUObject(this, &UNWGameInstance::OnSessionFailure);
 	}
 }
 
@@ -34,8 +39,7 @@ void UNWGameInstance::OnCreateSessionComplete(FName SessionName, bool Succeeded)
 	if (!Succeeded)
 		return;
 
-	UWidgetBlueprintLibrary::SetInputMode_GameOnly(GetWorld()->GetFirstLocalPlayerFromController()->PlayerController);
-	GetWorld()->ServerTravel("/Game/Levels/TutorialCave?listen");
+	GetWorld()->ServerTravel("/Game/Levels/" + LevelToOpen + "?listen");
 }
 
 void UNWGameInstance::OnFindSessionComplete(bool Succeeded)
@@ -71,15 +75,12 @@ void UNWGameInstance::OnFindSessionComplete(bool Succeeded)
 			
 		FServerInfo ServerInfo;
 		FString ServerName = "Empty ServerName";
-		FString HostName = "Empty HostName";
-
 		Result.Session.SessionSettings.Get(FName("SERVER_NAME_KEY"), ServerName);
-		Result.Session.SessionSettings.Get(FName("SERVER_HOSTNAME_KEY"), HostName);
-		
+
 		ArrayIndex++;
 		ServerInfo.ServerName = ServerName;
 		ServerInfo.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
-		ServerInfo.CurrentPlayers = ServerInfo.MaxPlayers - Result.Session.NumOpenPublicConnections;
+		ServerInfo.CurrentPlayers = UGameplayStatics::GetGameMode(GetWorld())->GetNumPlayers();
 		ServerInfo.SetPlayerCount();
 		ServerInfo.PingInMs = Result.PingInMs;
 		ServerInfo.isLan = Result.Session.SessionSettings.bIsLANMatch;
@@ -100,31 +101,27 @@ void UNWGameInstance::OnJoinSessionComplete(FName ServerName, EOnJoinSessionComp
 		if (JoinAddress == "")
 			return;
 		
-		UWidgetBlueprintLibrary::SetInputMode_GameOnly(GetWorld()->GetFirstLocalPlayerFromController()->PlayerController);
-		PlayerController->ClientTravel(JoinAddress, ETravelType::TRAVEL_Absolute);
+		PlayerController->ClientTravel(JoinAddress, TRAVEL_Absolute);
 	}
 }
 
-void UNWGameInstance::OnSessionFailure(const FUniqueNetId& NetID, ESessionFailure::Type)
-{
-	// if ()
-}
-
-void UNWGameInstance::HostGame(FCreateServerInfo ServerInfo)
+void UNWGameInstance::HostGame(FCreateServerInfo CreateServerInfo, FString OpenLevelName)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Create Session"))
+
+	this->LevelToOpen = OpenLevelName;
+	
 	FOnlineSessionSettings SessionSettings;
+	auto& [ServerName, MaxPlayers, bIsLan] = CreateServerInfo;
+	
+	SessionSettings.Set(FName("SERVER_NAME_KEY"), ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	SessionSettings.NumPublicConnections = MaxPlayers;
+	SessionSettings.bIsLANMatch = bIsLan;
+	// SessionSettings.bIsLANMatch = (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL") ? true : false;
 	SessionSettings.bIsDedicated = false;
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.bShouldAdvertise = true;
 	SessionSettings.bAllowJoinInProgress = true;
-	SessionSettings.NumPublicConnections = ServerInfo.MaxPlayers;
-
-	// TODO: Set to use ServerInfo.IsLan
-	SessionSettings.bIsLANMatch = (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL") ? true : false;
-
-	SessionSettings.Set(FName("SERVER_NAME_KEY"), ServerInfo.ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-	// SessionSettings.Set(FName("SERVER_HOSTNAME_KEY"), HostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	
 	SessionInterface->CreateSession(0, DefaultSessionName, SessionSettings);
 }
@@ -137,17 +134,17 @@ void UNWGameInstance::SearchServers()
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
 	SessionSearch->MaxSearchResults = 10000;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
-	SessionSearch->bIsLanQuery = IOnlineSubsystem::Get()->GetSubsystemName() != "NULL" ? false : true;	
-
+	SessionSearch->bIsLanQuery = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
+	
 	bQuickSearch = false;
 	SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
 }
 
 void UNWGameInstance::CancelSearch()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Session search canceled"))
 	IsSearchingServersDelegate.Broadcast(false);
 	SessionInterface->CancelFindSessions();
+	UE_LOG(LogTemp, Warning, TEXT("Session search canceled"))
 }
 
 void UNWGameInstance::QuickJoin()
@@ -177,3 +174,20 @@ void UNWGameInstance::JoinServer(int32 ArrayIndex)
 	UE_LOG(LogTemp, Warning, TEXT("JOINING SERVER AT INDEX %d"), ArrayIndex);
 	SessionInterface->JoinSession(0, DefaultSessionName, Result);	
 }
+
+
+///////////////////////////////////////
+///		Helper functions			///
+
+APlayerCharacter* UNWGameInstance::GetLocalPlayerCharacter()
+{
+	if (GEngine != nullptr)
+		return Cast<APlayerCharacter>(UGameplayStatics::GetPlayerController(GEngine->GameViewport->GetWorld(), 0)->GetPawn());
+	return nullptr;
+}
+
+void UNWGameInstance::ServerTravelBP_Implementation(const FString& LevelAddress, const bool Absolute, const bool ShouldSkipGameNotify)
+{
+	GetWorld()->ServerTravel("/Game/Levels/" + LevelAddress + "?listen", Absolute, ShouldSkipGameNotify);
+}
+

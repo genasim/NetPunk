@@ -37,11 +37,8 @@ void UPlayerMovementComponent::OnMovementUpdated(float DeltaSeconds, const FVect
 	
 	if (PawnOwner->IsLocallyControlled())
 	{
-		if (GetLastInputVector() != FVector::ZeroVector)
-			MoveDirection = PawnOwner->GetLastMovementInputVector();
-		else
-			MoveDirection = PawnOwner->GetActorForwardVector() * -1;
-		
+		MoveDirection = GetLastInputVector() != FVector::ZeroVector ?	PawnOwner->GetLastMovementInputVector() :
+																		PawnOwner->GetActorForwardVector() * -1;
 		if (PawnOwner->GetLocalRole() < ROLE_Authority)
 			ServerSetMoveDirection(MoveDirection);
 	}
@@ -49,9 +46,7 @@ void UPlayerMovementComponent::OnMovementUpdated(float DeltaSeconds, const FVect
 	if (!IsMovingOnGround())
 		bWantsToDodge = false;
 	else
-	{
 		FallingLateralFriction = 0.25f;
-	}
 
 	if (bWantsToDodge)
 	{
