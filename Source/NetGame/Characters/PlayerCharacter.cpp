@@ -5,12 +5,20 @@
 #include "PlayerMovementComponent.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 
+#include "NetGame/GAS/GASAttributeSet.h"
+#include "NetGame/GAS/BaseGameplayAbility.h"
+#include "NetGame/GAS/GASAbilitySystemComponent.h"
+
 // Sets default values
 APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UPlayerMovementComponent>(CharacterMovementComponentName))
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
+
+	AbilitySystemComponent = CreateDefaultSubobject<UGASAbilitySystemComponent>(TEXT("Ability Component"));
+	AbilitySystemComponent->SetIsReplicated(true);
+	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 }
 
 // Called when the game starts or when spawned
@@ -20,6 +28,8 @@ void APlayerCharacter::BeginPlay()
 	UWidgetBlueprintLibrary::SetInputMode_GameOnly(Cast<APlayerController>(Controller));
 
 	LoadSavedParameters();
+	
+	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 }
 
 void APlayerCharacter::MoveForward(float InputAxisValue)
@@ -68,7 +78,23 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		("Sprint", IE_Pressed, GetPlayerMovementComponent(), &UPlayerMovementComponent::SetSprinting, true);
 	PlayerInputComponent->BindAction<UPlayerMovementComponent::FSprintDelegate>
 		("Sprint", IE_Released, GetPlayerMovementComponent(), &UPlayerMovementComponent::SetSprinting, false);
+
+	
+	if (AbilitySystemComponent == nullptr || InputComponent == nullptr)
+		return;
+
+	const FGameplayAbilityInputBinds Binds(
+		"Confirm",
+		"Cancel",
+		"EGASAbilityInputID",
+		static_cast<int32>(EGASAbilityInputID::Confirm),
+		static_cast<int32>(EGASAbilityInputID::Cancel));
+	AbilitySystemComponent->BindAbilityActivationToInputComponent(InputComponent, Binds);
 }
+
+
+///////////////////////////////////////////////////////
+///		Saving System
 
 void APlayerCharacter::OnBeforeSave_Implementation()
 {
@@ -88,9 +114,37 @@ void APlayerCharacter::LoadSavedParameters()
 		SetActorTransform(PlayerTransform);
 }
 
+///////////////////////////////////////////////////////
+///		GameplayAbilities System
 
-//////////////////////////////////////////
-//		Helper Functions
+UAbilitySystemComponent* APlayerCharacter::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
+}
+
+void APlayerCharacter::GiveDefaultAbilities()
+{
+	if (!HasAuthority() || AbilitySystemComponent == nullptr)
+		return;
+	
+	for (auto& StartupAbility : DefaultAbilities)
+	{
+		AbilitySystemComponent->GiveAbility(
+			FGameplayAbilitySpec(StartupAbility, 1, static_cast<int32>(StartupAbility.GetDefaultObject()->AbilityInputID), this));	
+	}
+}
+
+void APlayerCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	//	Server GAS Init
+	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	GiveDefaultAbilities();
+}
+
+///////////////////////////////////////////////////////
+///		Helper Functions
 
 bool APlayerCharacter::IsHostCharacter() const
 {

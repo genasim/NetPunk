@@ -4,12 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+
+#include "AbilitySystemInterface.h"
+#include "NetGame/GAS/GASAbilitySystemComponent.h"
+#include "NetGame/GAS/BaseGameplayAbility.h"
 #include "NetGame/SaveLoad/SaveInterface.h"
+
 #include "PlayerCharacter.generated.h"
 
 class UPlayerMovementComponent;
 UCLASS()
-class NETGAME_API APlayerCharacter : public ACharacter, public ISaveInterface
+class NETGAME_API APlayerCharacter : public ACharacter, public ISaveInterface, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -37,11 +42,30 @@ protected:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="Networking")
 	bool IsHostCharacter() const;
 	
-// ISaveInterface
+// Saving system
 protected:
 	virtual void OnBeforeSave_Implementation() override;
 	void LoadSavedParameters();
 	
 	UPROPERTY(SaveGame, BlueprintReadOnly, Category="Saved Variables")
 	FTransform PlayerTransform;
+
+// GameplayAbilities system
+public:
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	
+protected:
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="GAS")
+	UGASAbilitySystemComponent* AbilitySystemComponent;
+
+	/** Effect to initialize the attributes' default values */
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="GAS")
+	TSubclassOf<UGameplayEffect> DefaultAttributeEffect;
+	  
+	/** Effect to initialize the attributes' default values */
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="GAS")
+	TArray<TSubclassOf<UBaseGameplayAbility>> DefaultAbilities;
+	
+	virtual void GiveDefaultAbilities();
+	virtual void PossessedBy(AController* NewController) override;
 };

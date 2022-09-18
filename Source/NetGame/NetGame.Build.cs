@@ -18,5 +18,12 @@ public class NetGame : ModuleRules
 			"OnlineSubsystemUtils",
 			"UMG"
 		});
+		
+		PrivateDependencyModuleNames.AddRange(new string[]
+		{
+			"GameplayAbilities",
+			"GameplayTags",
+			"GameplayTasks"
+		});
 	}
 }
