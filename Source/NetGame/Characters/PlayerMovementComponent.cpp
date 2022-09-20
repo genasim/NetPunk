@@ -55,9 +55,6 @@ void UPlayerMovementComponent::OnMovementUpdated(float DeltaSeconds, const FVect
 		DodgeVelocity.Z = 0.0f;
 		FallingLateralFriction = 6.5f;
 		Launch(DodgeVelocity);
-
-		FTimerHandle Timer;
-		GetOwner()->GetWorldTimerManager().SetTimer(Timer, this, &UPlayerMovementComponent::SetDodgeFalse, 1.0f, false);
 	}
 }
 

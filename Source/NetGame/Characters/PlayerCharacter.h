@@ -30,7 +30,7 @@ protected:
 	
 	void MoveForward(float InputAxisValue);
 	void MoveRight(float InputAxisValue);
-	
+
 	/**
 	* @brief Whether the targeted PlayerCharacter is controlled by the player on the server
 	*
@@ -57,15 +57,33 @@ public:
 protected:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="GAS")
 	UGASAbilitySystemComponent* AbilitySystemComponent;
-
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="GAS")
+	class UPlayerAttributeSet* AttributeSet;
+	
 	/** Effect to initialize the attributes' default values */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="GAS")
-	TSubclassOf<UGameplayEffect> DefaultAttributeEffect;
+	TSubclassOf<UGameplayEffect> DefaultAttributes;
 	  
 	/** Effect to initialize the attributes' default values */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="GAS")
 	TArray<TSubclassOf<UBaseGameplayAbility>> DefaultAbilities;
 	
+	/** Called on both server and client */
+	virtual void InitializeAttributes();
+	/** Called only on server */
 	virtual void GiveDefaultAbilities();
+	
 	virtual void PossessedBy(AController* NewController) override;
+	virtual void OnRep_PlayerState() override;
+
+	/** Called both on OnRep_PlayerState and SetupPlayerInput */
+	void BindASCInput();
+
+private:
+	bool bIsASCInputBound = false;
+	FVector2D InputVector;
+
+public:
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FVector2D GetInputVector() const { return InputVector; }
 };
