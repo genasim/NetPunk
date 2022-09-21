@@ -12,13 +12,10 @@
  * component to handle replicating different movement abilities
  */
 UCLASS()
-class NETGAME_API UPlayerMovementComponent : public UCharacterMovementComponent
+class NETGAME_API UPlayerMovementComponent final : public UCharacterMovementComponent
 {
 	GENERATED_BODY()
 
-	DECLARE_DELEGATE_OneParam(FSprintDelegate, bool)
-	
-	friend class APlayerCharacter;
 	friend class FPlayer_SavedMove_Character;
 	
 protected:
@@ -53,7 +50,7 @@ public:
 	virtual float GetMaxSpeed() const override;
 };
 
-class FPlayer_SavedMove_Character : public FSavedMove_Character
+class FPlayer_SavedMove_Character final : public FSavedMove_Character
 {
 public:
 	typedef FSavedMove_Character Super;
@@ -73,7 +70,7 @@ private:
 	uint8 bSavedWantsToDodge : 1;
 };
 
-class FPlayer_NetworkPredictionData_Client_Character : public FNetworkPredictionData_Client_Character
+class FPlayer_NetworkPredictionData_Client_Character final : public FNetworkPredictionData_Client_Character
 {
 public:
 	typedef FNetworkPredictionData_Client_Character Super;

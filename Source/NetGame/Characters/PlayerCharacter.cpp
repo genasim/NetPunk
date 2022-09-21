@@ -76,12 +76,6 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
-	// PlayerInputComponent->BindAction("Dodge", IE_Pressed, GetPlayerMovementComponent(), &UPlayerMovementComponent::DoDodge);
-	PlayerInputComponent->BindAction<UPlayerMovementComponent::FSprintDelegate>
-		("Sprint", IE_Pressed, GetPlayerMovementComponent(), &UPlayerMovementComponent::SetSprinting, true);
-	PlayerInputComponent->BindAction<UPlayerMovementComponent::FSprintDelegate>
-		("Sprint", IE_Released, GetPlayerMovementComponent(), &UPlayerMovementComponent::SetSprinting, false);
-
 	BindASCInput();
 }
 
@@ -121,9 +115,9 @@ void APlayerCharacter::InitializeAttributes()
 	if (AbilitySystemComponent == nullptr)
 		return;
 
-	if (!DefaultAttributes)
+	if (!DefaultEffectsToApply.Num())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s() Missing DefaultAttributes for %s. Please fill in the character's Blueprint."), *FString(__FUNCTION__), *GetName());
+		UE_LOG(LogTemp, Error, TEXT("%s() Missing DeffaultEffects for %s. Please fill in the character's Blueprint."), *FString(__FUNCTION__), *GetName());
 		return;
 	}
 
@@ -131,9 +125,12 @@ void APlayerCharacter::InitializeAttributes()
 	FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
 	EffectContext.AddSourceObject(this);
 
-	const FGameplayEffectSpecHandle NewHandle = AbilitySystemComponent->MakeOutgoingSpec(DefaultAttributes, 1, EffectContext);
-	if (NewHandle.IsValid())
+	for (const auto Effect : DefaultEffectsToApply)
 	{
+		const FGameplayEffectSpecHandle NewHandle = AbilitySystemComponent->MakeOutgoingSpec(Effect, 1, EffectContext);
+		if (!NewHandle.IsValid())
+			return;
+
 		AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*NewHandle.Data.Get(), AbilitySystemComponent);
 	}
 }

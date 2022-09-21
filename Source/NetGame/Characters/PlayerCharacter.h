@@ -62,9 +62,9 @@ protected:
 	
 	/** Effect to initialize the attributes' default values */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="GAS")
-	TSubclassOf<UGameplayEffect> DefaultAttributes;
+	TArray<TSubclassOf<UGameplayEffect>> DefaultEffectsToApply;
 	  
-	/** Effect to initialize the attributes' default values */
+	/** Default abilities to be given at the beginning */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="GAS")
 	TArray<TSubclassOf<UBaseGameplayAbility>> DefaultAbilities;
 	
