@@ -6,9 +6,7 @@
 #include "Net/UnrealNetwork.h"
 
 
-UPlayerAttributeSet::UPlayerAttributeSet()
-{
-}
+UPlayerAttributeSet::UPlayerAttributeSet() {}
 
 void UPlayerAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

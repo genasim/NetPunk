@@ -19,17 +19,22 @@ class NETGAME_API UPlayerMovementComponent final : public UCharacterMovementComp
 	friend class FPlayer_SavedMove_Character;
 	
 protected:
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables | Walk & Run")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")
 	float WalkSpeed = 350.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables | Walk & Run")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")
 	float RunSpeed = 750.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables | Dodge")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")
+	float AimSpeed = 125.0f;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")
 	float DodgeStrength = 500.0f;
 
-	/// @brief Trigger the Sprinting action
+	/** Set the Sprinting action */
 	UFUNCTION(BlueprintCallable)
 	void SetSprinting(bool Sprint);
-	/// @brief Trigger the Dodge action
+	/** Trigger the Dodge action */
+	UFUNCTION(BlueprintCallable)
+	void SetAim(bool Aim);
+	/** Trigger the Dodge action */
 	UFUNCTION(BlueprintCallable)
 	void DoDodge();
 
@@ -41,6 +46,7 @@ private:
 	uint8 bWantsToSprint : 1;
 	uint8 bWantsToDodge : 1;
 	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+	uint8 bWantsToAim : 1;
 	FVector MoveDirection;
 	
 public:
@@ -68,6 +74,7 @@ private:
 	uint8 bSavedWantsToSprint : 1;
 	FVector SavedMoveDirection;
 	uint8 bSavedWantsToDodge : 1;
+	uint8 bSavedWantsToAim : 1;
 };
 
 class FPlayer_NetworkPredictionData_Client_Character final : public FNetworkPredictionData_Client_Character

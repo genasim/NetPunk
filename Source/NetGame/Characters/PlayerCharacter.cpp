@@ -4,7 +4,6 @@
 #include "PlayerCharacter.h"
 #include "PlayerMovementComponent.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
-#include "Kismet/KismetMathLibrary.h"
 
 #include "NetGame/GAS/PlayerAttributeSet.h"
 #include "NetGame/GAS/BaseGameplayAbility.h"
@@ -20,8 +19,6 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	AbilitySystemComponent = CreateDefaultSubobject<UGASAbilitySystemComponent>(TEXT("Ability Component"));
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
-
-	AttributeSet = CreateDefaultSubobject<UPlayerAttributeSet>(TEXT("Attributes"));
 }
 
 // Called when the game starts or when spawned
@@ -110,7 +107,7 @@ UAbilitySystemComponent* APlayerCharacter::GetAbilitySystemComponent() const
 }
 
 
-void APlayerCharacter::InitializeAttributes()
+void APlayerCharacter::ApplyDefaultEffects()
 {
 	if (AbilitySystemComponent == nullptr)
 		return;
@@ -151,32 +148,26 @@ void APlayerCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
-	if (AbilitySystemComponent == nullptr || AttributeSet == nullptr)
+	if (AbilitySystemComponent == nullptr)
 		return;
 	
 		//	Server GAS Init
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
-	InitializeAttributes();
+	ApplyDefaultEffects();
 	GiveDefaultAbilities();
-
-	AttributeSet->SetHealth(AttributeSet->GetMaxHealth());
-	AttributeSet->SetStamina(AttributeSet->GetMaxStamina());
 }
 
 void APlayerCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 	
-	if (AbilitySystemComponent == nullptr || AttributeSet == nullptr)
+	if (AbilitySystemComponent == nullptr)
 		return;
 	
 		//	Client GAS Init
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
-	InitializeAttributes();
+	ApplyDefaultEffects();
 	BindASCInput();
-	
-	AttributeSet->SetHealth(AttributeSet->GetMaxHealth());
-	AttributeSet->SetStamina(AttributeSet->GetMaxStamina());
 }
 
 void APlayerCharacter::BindASCInput()

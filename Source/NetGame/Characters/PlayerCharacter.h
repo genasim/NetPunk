@@ -12,7 +12,6 @@
 
 #include "PlayerCharacter.generated.h"
 
-class UPlayerMovementComponent;
 UCLASS()
 class NETGAME_API APlayerCharacter : public ACharacter, public ISaveInterface, public IAbilitySystemInterface
 {
@@ -26,7 +25,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	UFUNCTION(BlueprintCallable, Category="PlayerMovementComponent")
-	UPlayerMovementComponent* GetPlayerMovementComponent() const;
+	class UPlayerMovementComponent* GetPlayerMovementComponent() const;
 	
 	void MoveForward(float InputAxisValue);
 	void MoveRight(float InputAxisValue);
@@ -57,8 +56,6 @@ public:
 protected:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="GAS")
 	UGASAbilitySystemComponent* AbilitySystemComponent;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="GAS")
-	class UPlayerAttributeSet* AttributeSet;
 	
 	/** Effect to initialize the attributes' default values */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="GAS")
@@ -69,7 +66,7 @@ protected:
 	TArray<TSubclassOf<UBaseGameplayAbility>> DefaultAbilities;
 	
 	/** Called on both server and client */
-	virtual void InitializeAttributes();
+	virtual void ApplyDefaultEffects();
 	/** Called only on server */
 	virtual void GiveDefaultAbilities();
 	
@@ -82,7 +79,6 @@ protected:
 private:
 	bool bIsASCInputBound = false;
 	FVector2D InputVector;
-
 public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVector2D GetInputVector() const { return InputVector; }

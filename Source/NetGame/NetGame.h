@@ -14,5 +14,6 @@ enum class EGASAbilityInputID : uint8
 	Cancel,
 	Attack,
 	Sprint,
-	Dash
+	Dash,
+	Aim
 };
