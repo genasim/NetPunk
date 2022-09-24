@@ -20,9 +20,9 @@ class NETGAME_API UPlayerMovementComponent final : public UCharacterMovementComp
 	
 protected:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")
-	float WalkSpeed = 350.0f;
+	float WalkSpeed = 280.0f;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")
-	float RunSpeed = 750.0f;
+	float RunSpeed = 560.0f;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")
 	float AimSpeed = 125.0f;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")

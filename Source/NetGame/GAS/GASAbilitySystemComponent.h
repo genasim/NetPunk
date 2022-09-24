@@ -4,14 +4,34 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystemComponent.h"
+#include "BaseGameplayAbility.h"
+#include "PlayerAttributeSet.h"
 #include "GASAbilitySystemComponent.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class NETGAME_API UGASAbilitySystemComponent : public UAbilitySystemComponent
+class NETGAME_API UGASAbilitySystemComponent final : public UAbilitySystemComponent
 {
 	GENERATED_BODY()
+
+protected:
+	/** Effect to initialize the attributes' default values */
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Defaults")
+	TArray<TSubclassOf<UGameplayEffect>> DefaultEffectsToApply;
+	  
+	/** Default abilities to be given at the beginning */
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Defaults")
+	TArray<TSubclassOf<UBaseGameplayAbility>> DefaultAbilities;
+
+	TWeakObjectPtr<UPlayerAttributeSet> AttributeSet;
+
+public:
+	UGASAbilitySystemComponent();
 	
+	/** Called on both server and client */
+	void ApplyDefaultEffects();
+	/** Called only on server */
+	void GiveDefaultAbilities();
 };

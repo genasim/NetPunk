@@ -6,8 +6,6 @@
 #include "GameFramework/Character.h"
 
 #include "AbilitySystemInterface.h"
-#include "NetGame/GAS/GASAbilitySystemComponent.h"
-#include "NetGame/GAS/BaseGameplayAbility.h"
 #include "NetGame/SaveLoad/SaveInterface.h"
 
 #include "PlayerCharacter.generated.h"
@@ -30,14 +28,6 @@ protected:
 	void MoveForward(float InputAxisValue);
 	void MoveRight(float InputAxisValue);
 
-	/**
-	* @brief Whether the targeted PlayerCharacter is controlled by the player on the server
-	*
-	* Perhaps there is no need to check, since the Host will have loaded
-	* a save slot which will be different than the default _Development one,
-	* hence the client will not access the server's data;
-	* Except if there is a _Develpment slot leftover from PIE testing sessions
-	*/
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="Networking")
 	bool IsHostCharacter() const;
 	
@@ -55,20 +45,7 @@ public:
 	
 protected:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="GAS")
-	UGASAbilitySystemComponent* AbilitySystemComponent;
-	
-	/** Effect to initialize the attributes' default values */
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="GAS")
-	TArray<TSubclassOf<UGameplayEffect>> DefaultEffectsToApply;
-	  
-	/** Default abilities to be given at the beginning */
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="GAS")
-	TArray<TSubclassOf<UBaseGameplayAbility>> DefaultAbilities;
-	
-	/** Called on both server and client */
-	virtual void ApplyDefaultEffects();
-	/** Called only on server */
-	virtual void GiveDefaultAbilities();
+	class UGASAbilitySystemComponent* AbilitySystemComponent;
 	
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;

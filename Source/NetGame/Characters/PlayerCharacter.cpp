@@ -17,8 +17,6 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	PrimaryActorTick.bCanEverTick = false;
 
 	AbilitySystemComponent = CreateDefaultSubobject<UGASAbilitySystemComponent>(TEXT("Ability Component"));
-	AbilitySystemComponent->SetIsReplicated(true);
-	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 }
 
 // Called when the game starts or when spawned
@@ -106,44 +104,6 @@ UAbilitySystemComponent* APlayerCharacter::GetAbilitySystemComponent() const
 	return AbilitySystemComponent;
 }
 
-
-void APlayerCharacter::ApplyDefaultEffects()
-{
-	if (AbilitySystemComponent == nullptr)
-		return;
-
-	if (!DefaultEffectsToApply.Num())
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s() Missing DeffaultEffects for %s. Please fill in the character's Blueprint."), *FString(__FUNCTION__), *GetName());
-		return;
-	}
-
-	// Can run on Server and Client
-	FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
-	EffectContext.AddSourceObject(this);
-
-	for (const auto Effect : DefaultEffectsToApply)
-	{
-		const FGameplayEffectSpecHandle NewHandle = AbilitySystemComponent->MakeOutgoingSpec(Effect, 1, EffectContext);
-		if (!NewHandle.IsValid())
-			return;
-
-		AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*NewHandle.Data.Get(), AbilitySystemComponent);
-	}
-}
-
-void APlayerCharacter::GiveDefaultAbilities()
-{
-	if (!HasAuthority() || AbilitySystemComponent == nullptr)
-		return;
-	
-	for (auto& StartupAbility : DefaultAbilities)
-	{
-		AbilitySystemComponent->GiveAbility(
-			FGameplayAbilitySpec(StartupAbility, 1, static_cast<int32>(StartupAbility.GetDefaultObject()->AbilityInputID), this));	
-	}
-}
-
 void APlayerCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
@@ -153,8 +113,8 @@ void APlayerCharacter::PossessedBy(AController* NewController)
 	
 		//	Server GAS Init
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
-	ApplyDefaultEffects();
-	GiveDefaultAbilities();
+	AbilitySystemComponent->ApplyDefaultEffects();
+	AbilitySystemComponent->GiveDefaultAbilities();
 }
 
 void APlayerCharacter::OnRep_PlayerState()
@@ -166,7 +126,7 @@ void APlayerCharacter::OnRep_PlayerState()
 	
 		//	Client GAS Init
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
-	ApplyDefaultEffects();
+	AbilitySystemComponent->ApplyDefaultEffects();
 	BindASCInput();
 }
 
