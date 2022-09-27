@@ -20,13 +20,13 @@ class NETGAME_API UPlayerMovementComponent final : public UCharacterMovementComp
 	
 protected:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")
-	float WalkSpeed = 280.0f;
+	float WalkSpeed;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")
-	float RunSpeed = 560.0f;
+	float RunSpeed;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")
-	float AimSpeed = 125.0f;
+	float AimSpeed;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")
-	float DodgeStrength = 500.0f;
+	float DodgeStrength;
 
 	/** Set the Sprinting action */
 	UFUNCTION(BlueprintCallable)

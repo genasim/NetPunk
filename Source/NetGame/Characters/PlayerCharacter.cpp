@@ -5,7 +5,6 @@
 #include "PlayerMovementComponent.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 
-#include "NetGame/GAS/PlayerAttributeSet.h"
 #include "NetGame/GAS/BaseGameplayAbility.h"
 #include "NetGame/GAS/GASAbilitySystemComponent.h"
 
