@@ -4,12 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+
+#include "AbilitySystemInterface.h"
 #include "NetGame/SaveLoad/SaveInterface.h"
+
 #include "PlayerCharacter.generated.h"
 
-class UPlayerMovementComponent;
 UCLASS()
-class NETGAME_API APlayerCharacter : public ACharacter, public ISaveInterface
+class NETGAME_API APlayerCharacter : public ACharacter, public ISaveInterface, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -21,27 +23,40 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	UFUNCTION(BlueprintCallable, Category="PlayerMovementComponent")
-	UPlayerMovementComponent* GetPlayerMovementComponent() const;
+	class UPlayerMovementComponent* GetPlayerMovementComponent() const;
 	
 	void MoveForward(float InputAxisValue);
 	void MoveRight(float InputAxisValue);
-	
-	/**
-	* @brief Whether the targeted PlayerCharacter is controlled by the player on the server
-	*
-	* Perhaps there is no need to check, since the Host will have loaded
-	* a save slot which will be different than the default _Development one,
-	* hence the client will not access the server's data;
-	* Except if there is a _Develpment slot leftover from PIE testing sessions
-	*/
+
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="Networking")
 	bool IsHostCharacter() const;
 	
-// ISaveInterface
+// Saving system
 protected:
 	virtual void OnBeforeSave_Implementation() override;
 	void LoadSavedParameters();
 	
 	UPROPERTY(SaveGame, BlueprintReadOnly, Category="Saved Variables")
 	FTransform PlayerTransform;
+
+// GameplayAbilities system
+public:
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	
+protected:
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="GAS")
+	class UGASAbilitySystemComponent* AbilitySystemComponent;
+	
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void OnRep_PlayerState() override;
+
+	/** Called both on OnRep_PlayerState and SetupPlayerInput */
+	void BindASCInput();
+
+private:
+	bool bIsASCInputBound = false;
+	FVector2D InputVector;
+public:
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FVector2D GetInputVector() const { return InputVector; }
 };

@@ -12,38 +12,41 @@
  * component to handle replicating different movement abilities
  */
 UCLASS()
-class NETGAME_API UPlayerMovementComponent : public UCharacterMovementComponent
+class NETGAME_API UPlayerMovementComponent final : public UCharacterMovementComponent
 {
 	GENERATED_BODY()
 
-	DECLARE_DELEGATE_OneParam(FSprintDelegate, bool)
-	
-	friend class APlayerCharacter;
 	friend class FPlayer_SavedMove_Character;
 	
 protected:
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables | Walk & Run")
-	float WalkSpeed = 350.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables | Walk & Run")
-	float RunSpeed = 750.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables | Dodge")
-	float DodgeStrength = 500.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables | Dodge")
-	float GroundDodgeStrengthMult = 1.0f;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")
+	float WalkSpeed;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")
+	float RunSpeed;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")
+	float AimSpeed;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Variables")
+	float DodgeStrength;
 
-	/// @brief Trigger the Sprinting action
+	/** Set the Sprinting action */
+	UFUNCTION(BlueprintCallable)
 	void SetSprinting(bool Sprint);
-	/// @brief Trigger the Dodge action
+	/** Trigger the Dodge action */
+	UFUNCTION(BlueprintCallable)
+	void SetAim(bool Aim);
+	/** Trigger the Dodge action */
+	UFUNCTION(BlueprintCallable)
 	void DoDodge();
 
 	virtual void OnMovementUpdated(float DeltaSeconds, const FVector& OldLocation, const FVector& OldVelocity) override;
 	UFUNCTION(Unreliable, Server, WithValidation)
 	void ServerSetMoveDirection(const FVector& MoveDir);
-	
+
+private:
 	uint8 bWantsToSprint : 1;
-	UPROPERTY(BlueprintReadOnly)
 	uint8 bWantsToDodge : 1;
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+	uint8 bWantsToAim : 1;
 	FVector MoveDirection;
 	
 public:
@@ -51,12 +54,9 @@ public:
 	virtual void UpdateFromCompressedFlags(uint8 Flags) override;
 	virtual FNetworkPredictionData_Client* GetPredictionData_Client() const override;
 	virtual float GetMaxSpeed() const override;
-
-private:
-	void SetDodgeFalse() { bWantsToDodge = false; }
 };
 
-class FPlayer_SavedMove_Character : public FSavedMove_Character
+class FPlayer_SavedMove_Character final : public FSavedMove_Character
 {
 public:
 	typedef FSavedMove_Character Super;
@@ -64,19 +64,20 @@ public:
 	virtual void Clear() override;
 	/// @brief Store input commands in compressed flags
 	virtual uint8 GetCompressedFlags() const override;
-	///@brief Sets up the move before sending it to the server.
+	/// @brief Sets up the move before sending it to the server.
 	virtual void SetMoveFor(ACharacter* C, float InDeltaTime, FVector const& NewAccel, FNetworkPredictionData_Client_Character& ClientData) override;
-	///@brief Sets variables on character movement component before making a predictive correction.
+	/// @brief Sets variables on character movement component before making a predictive correction.
 	virtual void PrepMoveFor(ACharacter* C) override;
 	virtual bool CanCombineWith(const FSavedMovePtr& NewMove, ACharacter* InCharacter, float MaxDelta) const override;
 
-public:
+private:
 	uint8 bSavedWantsToSprint : 1;
 	FVector SavedMoveDirection;
 	uint8 bSavedWantsToDodge : 1;
+	uint8 bSavedWantsToAim : 1;
 };
 
-class FPlayer_NetworkPredictionData_Client_Character : public FNetworkPredictionData_Client_Character
+class FPlayer_NetworkPredictionData_Client_Character final : public FNetworkPredictionData_Client_Character
 {
 public:
 	typedef FNetworkPredictionData_Client_Character Super;

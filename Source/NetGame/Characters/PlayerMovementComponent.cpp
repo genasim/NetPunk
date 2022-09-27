@@ -14,6 +14,11 @@ void UPlayerMovementComponent::SetSprinting(const bool Sprint)
 	bWantsToSprint = Sprint;
 }
 
+void UPlayerMovementComponent::SetAim(bool Aim)
+{
+	bWantsToAim = Aim;
+}
+
 void UPlayerMovementComponent::ServerSetMoveDirection_Implementation(const FVector& MoveDir)
 {
 	MoveDirection = MoveDir;
@@ -55,9 +60,6 @@ void UPlayerMovementComponent::OnMovementUpdated(float DeltaSeconds, const FVect
 		DodgeVelocity.Z = 0.0f;
 		FallingLateralFriction = 6.5f;
 		Launch(DodgeVelocity);
-
-		FTimerHandle Timer;
-		GetOwner()->GetWorldTimerManager().SetTimer(Timer, this, &UPlayerMovementComponent::SetDodgeFalse, 1.0f, false);
 	}
 }
 
@@ -67,6 +69,7 @@ void UPlayerMovementComponent::UpdateFromCompressedFlags(uint8 Flags)
 	
 	bWantsToSprint = (Flags & FSavedMove_Character::FLAG_Custom_0) != 0;
 	bWantsToDodge = (Flags & FSavedMove_Character::FLAG_Custom_1) != 0;
+	bWantsToAim = (Flags & FSavedMove_Character::FLAG_Custom_2) != 0;
 }
 
 FNetworkPredictionData_Client* UPlayerMovementComponent::GetPredictionData_Client() const
@@ -91,6 +94,8 @@ float UPlayerMovementComponent::GetMaxSpeed() const
 				return MaxWalkSpeedCrouched;
 			if (bWantsToSprint)
 				return RunSpeed;
+			if (bWantsToAim)
+				return AimSpeed;
 			return WalkSpeed;
 		}
 		case MOVE_Falling:
@@ -115,6 +120,7 @@ void FPlayer_SavedMove_Character::Clear()
 	bSavedWantsToSprint = false;
 	bSavedWantsToDodge = false;
 	SavedMoveDirection = FVector::ZeroVector;
+	bSavedWantsToAim = false;
 }
 
 uint8 FPlayer_SavedMove_Character::GetCompressedFlags() const
@@ -125,6 +131,9 @@ uint8 FPlayer_SavedMove_Character::GetCompressedFlags() const
 		Result |= FLAG_Custom_0;
 	if (bSavedWantsToDodge)
 		Result |= FLAG_Custom_1;
+	if (bSavedWantsToAim)
+		Result |= FLAG_Custom_2;
+	
 	return Result;
 }
 
@@ -140,6 +149,7 @@ void FPlayer_SavedMove_Character::SetMoveFor(ACharacter* C, float InDeltaTime, F
 		bSavedWantsToSprint = PlayerMovementComponent->bWantsToSprint;
 		bSavedWantsToDodge = PlayerMovementComponent->bWantsToDodge;
 		SavedMoveDirection = PlayerMovementComponent->MoveDirection;
+		bSavedWantsToAim = PlayerMovementComponent->bWantsToAim;
 	}
 }
 
@@ -162,6 +172,8 @@ bool FPlayer_SavedMove_Character::CanCombineWith(const FSavedMovePtr& NewMove, A
 	if (bSavedWantsToDodge != ((FPlayer_SavedMove_Character*)&NewMove)->bSavedWantsToDodge)
 		return false;
 	if (SavedMoveDirection != ((FPlayer_SavedMove_Character*)&NewMove)->SavedMoveDirection)
+		return false;
+	if (bSavedWantsToAim != ((FPlayer_SavedMove_Character*)&NewMove)->bSavedWantsToAim)
 		return false;
 
 	return Super::CanCombineWith(NewMove, InCharacter, MaxDelta);

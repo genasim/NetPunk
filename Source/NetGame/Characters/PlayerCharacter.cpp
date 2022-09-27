@@ -5,12 +5,17 @@
 #include "PlayerMovementComponent.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 
+#include "NetGame/GAS/BaseGameplayAbility.h"
+#include "NetGame/GAS/GASAbilitySystemComponent.h"
+
 // Sets default values
 APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UPlayerMovementComponent>(CharacterMovementComponentName))
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
+
+	AbilitySystemComponent = CreateDefaultSubobject<UGASAbilitySystemComponent>(TEXT("Ability Component"));
 }
 
 // Called when the game starts or when spawned
@@ -24,6 +29,7 @@ void APlayerCharacter::BeginPlay()
 
 void APlayerCharacter::MoveForward(float InputAxisValue)
 {
+	InputVector.Y = InputAxisValue;
 	if (Controller == nullptr || !InputAxisValue)
 		return;
 	
@@ -35,6 +41,7 @@ void APlayerCharacter::MoveForward(float InputAxisValue)
 
 void APlayerCharacter::MoveRight(float InputAxisValue)
 {
+	InputVector.X = InputAxisValue;
 	if (Controller == nullptr || !InputAxisValue)
 		return;
 	
@@ -63,12 +70,12 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
-	PlayerInputComponent->BindAction("Dodge", IE_Pressed, GetPlayerMovementComponent(), &UPlayerMovementComponent::DoDodge);
-	PlayerInputComponent->BindAction<UPlayerMovementComponent::FSprintDelegate>
-		("Sprint", IE_Pressed, GetPlayerMovementComponent(), &UPlayerMovementComponent::SetSprinting, true);
-	PlayerInputComponent->BindAction<UPlayerMovementComponent::FSprintDelegate>
-		("Sprint", IE_Released, GetPlayerMovementComponent(), &UPlayerMovementComponent::SetSprinting, false);
+	BindASCInput();
 }
+
+
+///////////////////////////////////////////////////////
+///		Saving System
 
 void APlayerCharacter::OnBeforeSave_Implementation()
 {
@@ -88,9 +95,58 @@ void APlayerCharacter::LoadSavedParameters()
 		SetActorTransform(PlayerTransform);
 }
 
+///////////////////////////////////////////////////////
+///		GameplayAbilities System
 
-//////////////////////////////////////////
-//		Helper Functions
+UAbilitySystemComponent* APlayerCharacter::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
+}
+
+void APlayerCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if (AbilitySystemComponent == nullptr)
+		return;
+	
+		//	Server GAS Init
+	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	AbilitySystemComponent->ApplyDefaultEffects();
+	AbilitySystemComponent->GiveDefaultAbilities();
+}
+
+void APlayerCharacter::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+	
+	if (AbilitySystemComponent == nullptr)
+		return;
+	
+		//	Client GAS Init
+	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	AbilitySystemComponent->ApplyDefaultEffects();
+	BindASCInput();
+}
+
+void APlayerCharacter::BindASCInput()
+{
+	if (AbilitySystemComponent == nullptr || InputComponent == nullptr || bIsASCInputBound)
+		return;
+
+	const FGameplayAbilityInputBinds Binds(
+		"Confirm",
+		"Cancel",
+		"EGASAbilityInputID",
+		static_cast<int32>(EGASAbilityInputID::Confirm),
+		static_cast<int32>(EGASAbilityInputID::Cancel));
+	AbilitySystemComponent->BindAbilityActivationToInputComponent(InputComponent, Binds);
+
+	bIsASCInputBound = true;
+}
+
+///////////////////////////////////////////////////////
+///		Helper Functions
 
 bool APlayerCharacter::IsHostCharacter() const
 {
