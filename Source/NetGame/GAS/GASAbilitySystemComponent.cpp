@@ -40,3 +40,69 @@ void UGASAbilitySystemComponent::GiveDefaultAbilities()
 			FGameplayAbilitySpec(StartupAbility, 1, static_cast<int32>(StartupAbility.GetDefaultObject()->AbilityInputID), this));	
 	}
 }
+
+void UGASAbilitySystemComponent::BeginPlay()
+{
+	AttributeSet = Cast<UPlayerAttributeSet>(GetAttributeSet(UPlayerAttributeSet::StaticClass()));
+	AttributesDataTable = DefaultStartingData[0].DefaultStartingTable;
+}
+
+float UGASAbilitySystemComponent::GetHealthFromTable(const EAttributeTableValue Column) const
+{
+	const FName RowName = FName(TEXT("PlayerAttributeSet.Health"));
+	const FString Context = FString(TEXT("Getting Health Attribute"));
+	const auto Row = AttributesDataTable->FindRow<FAttributeMetaData>(RowName, Context, true);
+
+	switch (Column) {
+		case Base: return Row->BaseValue;
+		case Max: return Row->MaxValue;
+		case Min: return Row->MinValue;
+		default: checkNoEntry();
+	}
+	return 0;
+}
+
+float UGASAbilitySystemComponent::GetStaminaFromTable(const EAttributeTableValue Column) const
+{
+	const FName RowName = FName(TEXT("PlayerAttributeSet.Stamina"));
+	const FString Context = FString(TEXT("Getting Stamina Attribute"));
+	const auto Row = AttributesDataTable->FindRow<FAttributeMetaData>(RowName, Context, true);
+
+	switch (Column) {
+	case Base: return Row->BaseValue;
+	case Max: return Row->MaxValue;
+	case Min: return Row->MinValue;
+	default: checkNoEntry();
+	}
+	return 0;
+}
+
+float UGASAbilitySystemComponent::GetHealthRegenFromTable(const EAttributeTableValue Column) const
+{
+	const FName RowName = FName(TEXT("PlayerAttributeSet.HealthRegen"));
+	const FString Context = FString(TEXT("Getting HealthRegen Attribute"));
+	const auto Row = AttributesDataTable->FindRow<FAttributeMetaData>(RowName, Context, true);
+
+	switch (Column) {
+	case Base: return Row->BaseValue;
+	case Max: return Row->MaxValue;
+	case Min: return Row->MinValue;
+	default: checkNoEntry();
+	}
+	return 0;
+}
+
+float UGASAbilitySystemComponent::GetStaminaRegenFromTable(const EAttributeTableValue Column) const
+{
+	const FName RowName = FName(TEXT("PlayerAttributeSet.StaminaRegen"));
+	const FString Context = FString(TEXT("Getting StaminaRegen Attribute"));
+	const auto Row = AttributesDataTable->FindRow<FAttributeMetaData>(RowName, Context, true);
+
+	switch (Column) {
+	case Base: return Row->BaseValue;
+	case Max: return Row->MaxValue;
+	case Min: return Row->MinValue;
+	default: checkNoEntry();
+	}
+	return 0;
+}

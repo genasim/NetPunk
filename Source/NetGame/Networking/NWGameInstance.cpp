@@ -116,8 +116,8 @@ void UNWGameInstance::HostGame(FCreateServerInfo CreateServerInfo, FString OpenL
 	
 	SessionSettings.Set(FName("SERVER_NAME_KEY"), ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	SessionSettings.NumPublicConnections = MaxPlayers;
-	SessionSettings.bIsLANMatch = bIsLan;
-	// SessionSettings.bIsLANMatch = (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL") ? true : false;
+	// SessionSettings.bIsLANMatch = bIsLan;
+	SessionSettings.bIsLANMatch = (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL") ? true : false;
 	SessionSettings.bIsDedicated = false;
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.bShouldAdvertise = true;

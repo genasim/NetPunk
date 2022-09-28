@@ -8,6 +8,14 @@
 #include "PlayerAttributeSet.h"
 #include "GASAbilitySystemComponent.generated.h"
 
+UENUM()
+enum EAttributeTableValue
+{
+	Base,
+	Max,
+	Min
+};
+
 /**
  * 
  */
@@ -24,8 +32,9 @@ protected:
 	/** Default abilities to be given at the beginning */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="Defaults")
 	TArray<TSubclassOf<UBaseGameplayAbility>> DefaultAbilities;
-
-	TWeakObjectPtr<UPlayerAttributeSet> AttributeSet;
+	
+	UPROPERTY()
+	const UPlayerAttributeSet* AttributeSet;
 
 public:
 	UGASAbilitySystemComponent();
@@ -34,4 +43,21 @@ public:
 	void ApplyDefaultEffects();
 	/** Called only on server */
 	void GiveDefaultAbilities();
+
+	virtual void BeginPlay() override;
+	
+	/**
+	 * Methods for accessing the Default Attribute DataTable
+	 * Not sure how to tie them to the AttributeSet's methods
+	 *		(or how to use them or even do so)
+	 */
+private:
+	UPROPERTY()
+	UDataTable* AttributesDataTable;
+	
+	float GetHealthFromTable(const EAttributeTableValue Column) const;
+	float GetStaminaFromTable(const EAttributeTableValue Column) const;
+	float GetHealthRegenFromTable(const EAttributeTableValue Column) const;
+	float GetStaminaRegenFromTable(const EAttributeTableValue Column) const;
 };
+
