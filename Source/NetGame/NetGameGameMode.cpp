@@ -1,16 +1,15 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "NetGameGameMode.h"
+#include "Networking/NetGameGameMode.h"
 
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerState.h"
+#include "Networking/NetPlayerController.h"
 #include "SaveLoad/SaveManager.h"
 
-ANetGameGameMode::ANetGameGameMode() {}
-
-void ANetGameGameMode::InitGameState()
+ANetGameGameMode::ANetGameGameMode()
 {
-	Super::InitGameState();
+	PlayerControllerClass = ANetPlayerController::StaticClass();
 }
 
 APawn* ANetGameGameMode::SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer,

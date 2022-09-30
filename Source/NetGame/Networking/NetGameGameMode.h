@@ -14,7 +14,6 @@ class ANetGameGameMode : public AGameModeBase
 public:
 	ANetGameGameMode();
 
-	virtual void InitGameState() override;
 	virtual APawn* SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform) override;
 };
 
