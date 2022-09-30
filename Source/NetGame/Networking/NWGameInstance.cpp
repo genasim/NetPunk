@@ -59,11 +59,18 @@ void UNWGameInstance::OnFindSessionComplete(bool Succeeded)
 		return;
 	}
 
+	for (int i = SearchResults.Num()-1; i > 0; i--)
+	{
+		auto& Result = SearchResults[i];
+		Result.Session.SessionInfo.Get();
+	}
+
 	if (bQuickSearch)
 	{
 		bQuickSearch = false;
 		const auto Index = FMath::RandRange(0,SearchResults.Num()-1);
-		SessionInterface->JoinSession(0, DefaultSessionName, SearchResults[Index]);	
+		// SessionInterface->JoinSession(0, DefaultSessionName, SearchResults[Index]);	
+		JoinServer(Index);
 		return;
 	}
 		
@@ -83,7 +90,7 @@ void UNWGameInstance::OnFindSessionComplete(bool Succeeded)
 		ServerInfo.CurrentPlayers = UGameplayStatics::GetGameMode(GetWorld())->GetNumPlayers();
 		ServerInfo.SetPlayerCount();
 		ServerInfo.PingInMs = Result.PingInMs;
-		ServerInfo.isLan = Result.Session.SessionSettings.bIsLANMatch;
+		ServerInfo.bIsLan = Result.Session.SessionSettings.bIsLANMatch;
 		ServerInfo.ServerArrayIndex = ArrayIndex;
 
 		UE_LOG(LogTemp, Warning, TEXT("Server Name: %s | Server Index: %d"), *ServerInfo.ServerName, ArrayIndex)
@@ -109,13 +116,13 @@ void UNWGameInstance::HostGame(FCreateServerInfo CreateServerInfo, FString OpenL
 {
 	UE_LOG(LogTemp, Warning, TEXT("Create Session"))
 
-	this->LevelToOpen = OpenLevelName;
+	LevelToOpen = OpenLevelName;
 	
 	FOnlineSessionSettings SessionSettings;
 	auto& [ServerName, MaxPlayers, bIsLan] = CreateServerInfo;
 	
 	SessionSettings.Set(FName("SERVER_NAME_KEY"), ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-	SessionSettings.NumPublicConnections = MaxPlayers;
+	SessionSettings.NumPublicConnections = 1;
 	// SessionSettings.bIsLANMatch = bIsLan;
 	SessionSettings.bIsLANMatch = (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL") ? true : false;
 	SessionSettings.bIsDedicated = false;

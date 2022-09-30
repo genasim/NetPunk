@@ -35,7 +35,7 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	int MaxPlayers;
 	UPROPERTY(BlueprintReadOnly)
-	bool isLan;
+	bool bIsLan;
 	UPROPERTY(BlueprintReadOnly)
 	int PingInMs;
 	UPROPERTY(BlueprintReadOnly)
@@ -78,15 +78,15 @@ protected:
 	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category="Networking")
 	FShowErrorMessage ShowErrorMessage;
 	
-	UFUNCTION(BlueprintCallable, Category="Networking")
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Networking")
 	void HostGame(FCreateServerInfo CreateServerInfo, FString OpenLevelName);
-	UFUNCTION(BlueprintCallable, Category="Networking")
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Networking")
 	void SearchServers();
-	UFUNCTION(BlueprintCallable, Category="Networking")
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Networking")
 	void CancelSearch();
-	UFUNCTION(BlueprintCallable, Category="Networking")
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Networking")
 	void QuickJoin();
-	UFUNCTION(BlueprintCallable, Category="Networking")
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Networking")
 	void JoinServer(int32 ArrayIndex);
 
 private:

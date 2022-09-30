@@ -1,11 +1,11 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "Networking/NetGameGameMode.h"
+#include "NetGameGameMode.h"
 
+#include "NetPlayerController.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerState.h"
-#include "Networking/NetPlayerController.h"
-#include "SaveLoad/SaveManager.h"
+#include "NetGame/SaveLoad/SaveManager.h"
 
 ANetGameGameMode::ANetGameGameMode()
 {
