@@ -33,10 +33,12 @@ protected:
 	
 // Saving system
 protected:
+	UFUNCTION(BlueprintAuthorityOnly, Category="Saved Variables")
 	virtual void OnBeforeSave_Implementation() override;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, BlueprintAuthorityOnly, Category="Saved Variables")
 	void LoadSavedParameters();
 	
-	UPROPERTY(SaveGame, BlueprintReadOnly, Category="Saved Variables")
+	UPROPERTY(SaveGame)
 	FTransform PlayerTransform;
 
 // GameplayAbilities system

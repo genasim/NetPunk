@@ -7,16 +7,19 @@
 #include "SaveGameMetadata.h"
 #include "Engine/Engine.h"
 #include "Kismet/GameplayStatics.h"
+#include "NetGame/Networking/NWGameInstance.h"
 
 // Define external symbols; "Unresolved external symbol compile error" otherwise
-FString USaveManager::CurrentSaveSlot;
 TArray<TScriptInterface<ISaveInterface>> USaveManager::SaveInterfaces;
+FString USaveManager::CurrentSaveSlot;
+UNWGameInstance* USaveManager::GameInstance;
 
-
-void USaveManager::Init()
+void USaveManager::Init(UNWGameInstance* InGameInstance)
 {
 	CurrentSaveSlot = "_Development";
-
+	GameInstance = InGameInstance;
+	ClearSaveInterfaceArray();
+	
 	const USaveGame* SaveGameMetadata = UGameplayStatics::LoadGameFromSlot(MetadataSaveSlot, 0);
 	if (SaveGameMetadata == nullptr)
 	{
@@ -29,9 +32,9 @@ void USaveManager::Init()
 void USaveManager::QueryAllSaveInterfaces()
 {
 	// Clear old entries
-	SaveInterfaces.Empty();
+	ClearSaveInterfaceArray();
 
-	// Get all actors that implement the intrerface
+	// Get all actors that implement the interface
 	TArray<AActor*> Actors;
 	UGameplayStatics::GetAllActorsWithInterface(GWorld, USaveInterface::StaticClass(), Actors);
 	for (auto* Actor : Actors)
@@ -41,10 +44,29 @@ void USaveManager::QueryAllSaveInterfaces()
 void USaveManager::SaveGame()
 {
 	// Create a new save game data instance
-	USaveGameData* SaveGameData = Cast<USaveGameData>(UGameplayStatics::CreateSaveGameObject(USaveGameData::StaticClass()));
-
+	USaveGameData* const SaveGameData = Cast<USaveGameData>(UGameplayStatics::CreateSaveGameObject(USaveGameData::StaticClass()));
+	
 	QueryAllSaveInterfaces();
-	// Go over all actors that need to be saved and save them
+	SaveParameters(SaveGameData);
+
+	// Saves the game to the current save slot
+	UGameplayStatics::SaveGameToSlot(SaveGameData, CurrentSaveSlot, 0);
+
+	// Update the save's metadata
+	USaveGameMetadata* const SaveGameMetadata = Cast<USaveGameMetadata>(UGameplayStatics::LoadGameFromSlot(MetadataSaveSlot, 0));
+	auto& [SlotName, DateTime, LevelToSave] = SaveGameMetadata->SavedGamesMetadata.FindOrAdd(CurrentSaveSlot);
+	SlotName = CurrentSaveSlot;
+	DateTime = FDateTime::Now();
+	LevelToSave = UGameplayStatics::GetCurrentLevelName(GameInstance->GetWorld(), true);
+
+	UGameplayStatics::SaveGameToSlot(SaveGameMetadata, MetadataSaveSlot, 0);
+
+	if (GEngine != nullptr)
+		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Green, "Saved: " + CurrentSaveSlot);
+}
+
+void USaveManager::SaveParameters(USaveGameData* const SaveGameData)
+{
 	for (auto& SaveInterface : SaveInterfaces)
 	{
 		if (SaveInterface.GetObject() == nullptr)
@@ -54,7 +76,7 @@ void USaveManager::SaveGame()
 		SaveInterface->Execute_OnBeforeSave(SaveInterface.GetObject());
 
 		// Find the object's save data, using it's unique name
-		FString UniqueSaveName = SaveInterface->Execute_GetUniqueSaveName(SaveInterface.GetObject());
+		const FString UniqueSaveName = SaveInterface->Execute_GetUniqueSaveName(SaveInterface.GetObject());
 		auto& [Data] = SaveGameData->SerialisedData.Add(UniqueSaveName);
 		
 		FMemoryWriter MemoryWriter = FMemoryWriter(Data);
@@ -62,52 +84,48 @@ void USaveManager::SaveGame()
 
 		SaveInterface.GetObject()->Serialize(MemoryWriter);
 	}
+}
 
-	// Saves the game to the current save slot
-	UGameplayStatics::SaveGameToSlot(SaveGameData, CurrentSaveSlot, 0);
-
-	// Update the save's metadata
-	USaveGameMetadata* SaveGameMetadata = Cast<USaveGameMetadata>(UGameplayStatics::LoadGameFromSlot(MetadataSaveSlot, 0));
-	auto& [SlotName, DateTime] = SaveGameMetadata->SavedGamesMetadata.FindOrAdd(CurrentSaveSlot);
-	SlotName = CurrentSaveSlot;
-	DateTime = FDateTime::Now();
-	UGameplayStatics::SaveGameToSlot(SaveGameMetadata, MetadataSaveSlot, 0);
-
-	if (GEngine != nullptr)
-		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Green, "Saved: " + CurrentSaveSlot);
+void USaveManager::LoadSavedLevel()
+{
+	const USaveGameMetadata* SaveGameMetadata = Cast<USaveGameMetadata>(UGameplayStatics::LoadGameFromSlot(MetadataSaveSlot, 0));
+	const FString LevelToOpen = SaveGameMetadata->SavedGamesMetadata.Find(CurrentSaveSlot)->SavedLevelName;
+	GameInstance->HostGame("Test", LevelToOpen);
 }
 
 void USaveManager::LoadGame()
 {
-	USaveGameData* SaveGameData = Cast<USaveGameData>(UGameplayStatics::LoadGameFromSlot(CurrentSaveSlot, 0));
+	const USaveGameData* SaveGameData = Cast<USaveGameData>(UGameplayStatics::LoadGameFromSlot(CurrentSaveSlot, 0));
 	if (SaveGameData == nullptr)
 	{
 		SaveGame();		// No Saves exist for this slot, so create a default one
 		SaveGameData = Cast<USaveGameData>(UGameplayStatics::LoadGameFromSlot(CurrentSaveSlot, 0)); // Reload it
 	}
+	LoadSavedParameters(SaveGameData);
+	
+	if (GEngine != nullptr)
+		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Green, "Loaded: " + CurrentSaveSlot);
+}
 
-	// Loop over all actors that need to load data and load their data
+void USaveManager::LoadSavedParameters(const USaveGameData* const SaveGameData)
+{
 	for (auto& SaveInterface : SaveInterfaces)
 	{
 		if (SaveInterface.GetObject() == nullptr)
 			continue;
 
 		// Find the object's save data, using it's unique name
-		FString UniqueSaveName = SaveInterface->Execute_GetUniqueSaveName(SaveInterface.GetObject());
-		FSaveData* SaveData = SaveGameData->SerialisedData.Find(UniqueSaveName);
+		const FString UniqueSaveName = SaveInterface->Execute_GetUniqueSaveName(SaveInterface.GetObject());
+		const FSaveData* SaveData = SaveGameData->SerialisedData.Find(UniqueSaveName);
 		
-		if (SaveData == nullptr)
-			continue;
+		// if (SaveData == nullptr)
+		// 	continue;
 		
 		FMemoryReader MemoryReader(SaveData->Data);
 		MemoryReader.ArIsSaveGame = false;
 		// Essentially load the data from the save
 		SaveInterface.GetObject()->Serialize(MemoryReader);
 	}
-	
-	if (GEngine != nullptr)
-		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Green, "Loaded: " + CurrentSaveSlot);
-
 }
 
 void USaveManager::DeleteSlot(const FString& SlotName)
@@ -153,7 +171,7 @@ void USaveManager::SetCurrentSaveSlot(const FString& SlotName)
 TArray<FSaveMetadata> USaveManager::GetAllSaveMetadata()
 {
 	TArray<FSaveMetadata> Metadata;
-	USaveGameMetadata* SaveGameMetadata = Cast<USaveGameMetadata>(UGameplayStatics::LoadGameFromSlot(MetadataSaveSlot, 0));
+	const USaveGameMetadata* SaveGameMetadata = Cast<USaveGameMetadata>(UGameplayStatics::LoadGameFromSlot(MetadataSaveSlot, 0));
 
 	// Allocate exact memory for array  
 	Metadata.Reserve(SaveGameMetadata->SavedGamesMetadata.Num());
@@ -162,5 +180,10 @@ TArray<FSaveMetadata> USaveManager::GetAllSaveMetadata()
 	{
 		Metadata.Push(SavedGame.Value);
 	}
+	
+	Metadata.Sort([](const FSaveMetadata& SaveA, const FSaveMetadata& SaveB) {
+		return  SaveA.DateTime > SaveB.DateTime;
+	});
+	
 	return Metadata;
 }

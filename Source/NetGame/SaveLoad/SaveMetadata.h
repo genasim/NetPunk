@@ -14,4 +14,8 @@ struct FSaveMetadata
 	/// @brief Slot's date of creation
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Save & Load")
 	FDateTime DateTime;
+
+	/// @brief Name of the Slot
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Save & Load")
+	FString SavedLevelName;
 };

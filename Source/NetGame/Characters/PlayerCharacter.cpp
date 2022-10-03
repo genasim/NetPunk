@@ -86,7 +86,7 @@ void APlayerCharacter::OnBeforeSave_Implementation()
 	PlayerTransform = GetActorTransform();
 }
 
-void APlayerCharacter::LoadSavedParameters()
+void APlayerCharacter::LoadSavedParameters_Implementation()
 {
 	 if (!IsHostCharacter())
 	 	return;					

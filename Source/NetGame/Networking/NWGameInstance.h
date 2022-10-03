@@ -62,6 +62,7 @@ class NETGAME_API UNWGameInstance : public UGameInstance
 public:
 	UNWGameInstance();
 
+	
 protected:
 	virtual void Init() override;
 	IOnlineSessionPtr SessionInterface;
@@ -70,24 +71,28 @@ protected:
 	virtual void OnCreateSessionComplete(FName SessionName, bool Succeeded);
 	virtual void OnFindSessionComplete(bool Succeeded);
 	virtual void OnJoinSessionComplete(FName ServerName, EOnJoinSessionCompleteResult::Type Result);
-
+	virtual void OnDestroySessionComplete(FName SessionName, bool Succeeded);
+	
 	UPROPERTY(BlueprintAssignable, Category="Networking")
 	FAddServerSlotDelegate AddServerSlotDelegate;
 	UPROPERTY(BlueprintAssignable, Category="Networking")
 	FIsSearchingServersDelegate IsSearchingServersDelegate;
 	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category="Networking")
 	FShowErrorMessage ShowErrorMessage;
-	
+
+public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Networking")
-	void HostGame(FCreateServerInfo CreateServerInfo, FString OpenLevelName);
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Networking")
+	void HostGame(const FString ServerName, const FString OpenLevelName);
+	UFUNCTION(BlueprintCallable, Category="Networking")
 	void SearchServers();
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Networking")
+	UFUNCTION(BlueprintCallable, Category="Networking")
 	void CancelSearch();
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Networking")
+	UFUNCTION(BlueprintCallable, Category="Networking")
 	void QuickJoin();
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Networking")
+	UFUNCTION(BlueprintCallable, Category="Networking")
 	void JoinServer(int32 ArrayIndex);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Networking")
+	void DestroyGame();
 
 private:
 	bool bQuickSearch = false;
@@ -99,6 +104,6 @@ public:
 	UFUNCTION(BlueprintPure, Category="Networking")
 	static APlayerCharacter* GetLocalPlayerCharacter();
 
-	UFUNCTION(Server, Reliable, BlueprintCallable, BlueprintAuthorityOnly, Category="Networking")
-	void ServerTravelBP(const FString& LevelAddress, const bool Absolute, const bool ShouldSkipGameNotify);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Networking")
+	static void ServerTravelBP(const FString& LevelAddress, const bool Absolute, const bool ShouldSkipGameNotify);
 };

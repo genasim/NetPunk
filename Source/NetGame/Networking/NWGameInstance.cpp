@@ -19,7 +19,7 @@ void UNWGameInstance::Init()
 {
 	Super::Init();
 
-	USaveManager::Init();
+	USaveManager::Init(this);
 	
 	if (IOnlineSubsystem::Get() == nullptr)
 		return;
@@ -30,6 +30,7 @@ void UNWGameInstance::Init()
 		SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UNWGameInstance::OnCreateSessionComplete);
 		SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UNWGameInstance::OnFindSessionComplete);
 		SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UNWGameInstance::OnJoinSessionComplete);
+		SessionInterface->OnDestroySessionCompleteDelegates.AddUObject(this, &UNWGameInstance::OnDestroySessionComplete);
 	}
 }
 
@@ -59,11 +60,11 @@ void UNWGameInstance::OnFindSessionComplete(bool Succeeded)
 		return;
 	}
 
-	for (int i = SearchResults.Num()-1; i > 0; i--)
-	{
-		auto& Result = SearchResults[i];
-		Result.Session.SessionInfo.Get();
-	}
+	// for (int i = SearchResults.Num()-1; i > 0; i--)
+	// {
+	// 	auto& Result = SearchResults[i];
+	// 	Result.Session.SessionSettings.;
+	// }
 
 	if (bQuickSearch)
 	{
@@ -112,14 +113,20 @@ void UNWGameInstance::OnJoinSessionComplete(FName ServerName, EOnJoinSessionComp
 	}
 }
 
-void UNWGameInstance::HostGame(FCreateServerInfo CreateServerInfo, FString OpenLevelName)
+void UNWGameInstance::OnDestroySessionComplete(FName SessionName, bool Succeeded)
+{
+	USaveManager::ClearSaveInterfaceArray();
+}
+
+void UNWGameInstance::HostGame(const FString ServerName, const FString OpenLevelName)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Create Session"))
 
-	LevelToOpen = OpenLevelName;
+	if (OpenLevelName != "")
+		LevelToOpen = OpenLevelName;
 	
 	FOnlineSessionSettings SessionSettings;
-	auto& [ServerName, MaxPlayers, bIsLan] = CreateServerInfo;
+	// auto& [ServerName, MaxPlayers, bIsLan] = CreateServerInfo;
 	
 	SessionSettings.Set(FName("SERVER_NAME_KEY"), ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	SessionSettings.NumPublicConnections = 1;
@@ -182,6 +189,11 @@ void UNWGameInstance::JoinServer(int32 ArrayIndex)
 	SessionInterface->JoinSession(0, DefaultSessionName, Result);	
 }
 
+void UNWGameInstance::DestroyGame()
+{
+	SessionInterface->DestroySession(DefaultSessionName);
+}
+
 
 ///////////////////////////////////////
 ///		Helper functions			///
@@ -193,8 +205,9 @@ APlayerCharacter* UNWGameInstance::GetLocalPlayerCharacter()
 	return nullptr;
 }
 
-void UNWGameInstance::ServerTravelBP_Implementation(const FString& LevelAddress, const bool Absolute, const bool ShouldSkipGameNotify)
+void UNWGameInstance::ServerTravelBP(const FString& LevelAddress, const bool Absolute, const bool ShouldSkipGameNotify)
 {
-	GetWorld()->ServerTravel("/Game/Levels/" + LevelAddress + "?listen", Absolute, ShouldSkipGameNotify);
+	if (GEngine != nullptr)
+		GEngine->GameViewport->GetWorld()->ServerTravel("/Game/Levels/" + LevelAddress + "?listen", Absolute, ShouldSkipGameNotify);
 }
 
