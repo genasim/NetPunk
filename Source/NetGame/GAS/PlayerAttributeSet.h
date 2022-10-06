@@ -21,19 +21,23 @@ class NETGAME_API UPlayerAttributeSet : public UAttributeSet
 {
 	GENERATED_BODY()
 
+	enum EAttributeTableValue
+	{
+		Base,
+		Max,
+		Min
+	};
+	
 public:
 	UPlayerAttributeSet();
 
+	virtual void InitFromMetaDataTable(const UDataTable* DataTable) override;
+	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+	
 	UPROPERTY(SaveGame, BlueprintReadOnly, Category = "Health", ReplicatedUsing = OnRep_Health)
 	FGameplayAttributeData Health;
 	ATTRIBUTE_ACCESSORS(UPlayerAttributeSet, Health)
-
-	// MaxHealth is its own attribute since GameplayEffects may modify it
-	UPROPERTY(SaveGame, BlueprintReadOnly, Category = "Health", ReplicatedUsing = OnRep_MaxHealth)
-	FGameplayAttributeData MaxHealth;
-	ATTRIBUTE_ACCESSORS(UPlayerAttributeSet, MaxHealth)
 
 	// Health regen rate will passively increase Health every second
 	UPROPERTY(SaveGame, BlueprintReadOnly, Category = "Health", ReplicatedUsing = OnRep_HealthRegenRate)
@@ -44,11 +48,6 @@ public:
 	UPROPERTY(SaveGame, BlueprintReadOnly, Category = "Stamina", ReplicatedUsing = OnRep_Stamina)
 	FGameplayAttributeData Stamina;
 	ATTRIBUTE_ACCESSORS(UPlayerAttributeSet, Stamina)
-
-	// MaxStamina is its own attribute since GameplayEffects may modify it
-	UPROPERTY(SaveGame, BlueprintReadOnly, Category = "Stamina", ReplicatedUsing = OnRep_MaxStamina)
-	FGameplayAttributeData MaxStamina;
-	ATTRIBUTE_ACCESSORS(UPlayerAttributeSet, MaxStamina)
 
 	// Stamina regen rate will passively increase Stamina every second
 	UPROPERTY(SaveGame, BlueprintReadOnly, Category = "Stamina", ReplicatedUsing = OnRep_StaminaRegenRate)
@@ -62,6 +61,7 @@ public:
 	ATTRIBUTE_ACCESSORS(UPlayerAttributeSet, AttackPower)
 
 	// MoveSpeed affects how fast characters can move.
+	// Unused as of now
 	UPROPERTY(SaveGame, BlueprintReadOnly, Category = "MoveSpeed", ReplicatedUsing = OnRep_MoveSpeed)
 	FGameplayAttributeData MoveSpeed;
 	ATTRIBUTE_ACCESSORS(UPlayerAttributeSet, MoveSpeed)
@@ -71,20 +71,23 @@ public:
 	virtual void OnRep_Health(const FGameplayAttributeData& OldHealth);
 
 	UFUNCTION()
-	virtual void OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth);
-
-	UFUNCTION()
 	virtual void OnRep_HealthRegenRate(const FGameplayAttributeData& OldHealthRegenRate);
 
 	UFUNCTION()
 	virtual void OnRep_Stamina(const FGameplayAttributeData& OldStamina);
 
 	UFUNCTION()
-	virtual void OnRep_MaxStamina(const FGameplayAttributeData& OldMaxStamina);
-
-	UFUNCTION()
 	virtual void OnRep_StaminaRegenRate(const FGameplayAttributeData& OldStaminaRegenRate);
 
 	UFUNCTION()
 	virtual void OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpeed);
+
+private:	
+	UPROPERTY()
+	UDataTable* AttributesDataTable;
+	
+	float GetHealthFromTable(const EAttributeTableValue Column) const;
+	float GetStaminaFromTable(const EAttributeTableValue Column) const;
+	float GetHealthRegenRateFromTable(const EAttributeTableValue Column) const;
+	float GetStaminaRegenRateFromTable(const EAttributeTableValue Column) const;
 };

@@ -118,9 +118,6 @@ void USaveManager::LoadSavedParameters(const USaveGameData* const SaveGameData)
 		const FString UniqueSaveName = SaveInterface->Execute_GetUniqueSaveName(SaveInterface.GetObject());
 		const FSaveData* SaveData = SaveGameData->SerialisedData.Find(UniqueSaveName);
 		
-		// if (SaveData == nullptr)
-		// 	continue;
-		
 		FMemoryReader MemoryReader(SaveData->Data);
 		MemoryReader.ArIsSaveGame = false;
 		// Essentially load the data from the save
