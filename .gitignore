@@ -86,3 +86,9 @@ DerivedDataCache/*
 *.pptx
 *.ppt
 
+!_Documentation/*.pdf
+!_Documentation/*.docx
+!_Documentation/*.pptx
+!_Documentation/*.rar
+
+!NetPunk_Setup.exe
