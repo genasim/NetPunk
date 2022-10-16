@@ -55,13 +55,15 @@ void UEOSGameInstance::CreateSession()
 {
 	FOnlineSessionSettings SessionSettings;
 	SessionSettings.bIsDedicated = false;
-	SessionSettings.NumPublicConnections = 1;
+	SessionSettings.NumPublicConnections = 4;
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.bAllowInvites = true;
-	SessionSettings.bAllowJoinInProgress = false;
+	SessionSettings.bAllowJoinInProgress = true;
 	SessionSettings.bAllowJoinViaPresence = true;
 	SessionSettings.bShouldAdvertise = true;
-	SessionSettings.bIsLANMatch = true;
+	SessionSettings.bIsLANMatch = false;
+	SessionSettings.bUseLobbiesIfAvailable = true;
+	SessionSettings.Set(SEARCH_KEYWORDS, FString("GameLobby"), EOnlineDataAdvertisementType::ViaOnlineService);
 		
 	SessionPtr->OnCreateSessionCompleteDelegates.AddUObject(this, &UEOSGameInstance::OnCreateSessionComplete);
 	SessionPtr->CreateSession(0, DefaultSessionName, SessionSettings);
