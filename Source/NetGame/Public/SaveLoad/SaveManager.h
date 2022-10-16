@@ -6,7 +6,8 @@
 #include "SaveGameData.h"
 #include "SaveInterface.h"
 #include "SaveMetadata.h"
-#include "Networking/NWGameInstance.h"
+#include "Networking/EOSGameInstance.h"
+// #include "Networking/NWGameInstance.h"
 #include "UObject/NoExportTypes.h"
 #include "SaveManager.generated.h"
 
@@ -20,7 +21,8 @@ class NETGAME_API USaveManager : public UObject
 	
 public:
 	/// @brief Initialise the class. Must be called when game first launches
-	static void Init(UNWGameInstance* InGameInstance);
+	static void Init(UEOSGameInstance* InGameInstance);
+	// static void Init(UNWGameInstance* InGameInstance); todo: clean comments
 
 	/**
 	 *	@brief Queries all the actors in the game that implement the save interface
@@ -76,7 +78,8 @@ private:
 	static TArray<TScriptInterface<ISaveInterface>> SaveInterfaces;
 
 	static FString CurrentSaveSlot;
-	static UNWGameInstance* GameInstance;
+	// static UNWGameInstance* GameInstance;
+	static UEOSGameInstance* GameInstance;
 	
 	inline static const FString MetadataSaveSlot = "SaveGameMetadata";
 	inline static constexpr int32 MaxSaveSlots = 15;

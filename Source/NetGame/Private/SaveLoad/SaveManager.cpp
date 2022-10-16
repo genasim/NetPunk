@@ -12,9 +12,9 @@
 // Define external symbols; "Unresolved external symbol compile error" otherwise
 TArray<TScriptInterface<ISaveInterface>> USaveManager::SaveInterfaces;
 FString USaveManager::CurrentSaveSlot;
-UNWGameInstance* USaveManager::GameInstance;
+UEOSGameInstance* USaveManager::GameInstance;
 
-void USaveManager::Init(UNWGameInstance* InGameInstance)
+void USaveManager::Init(UEOSGameInstance* InGameInstance)
 {
 	CurrentSaveSlot = "_Development";
 	GameInstance = InGameInstance;
@@ -90,7 +90,8 @@ void USaveManager::LoadSavedLevel()
 {
 	const USaveGameMetadata* SaveGameMetadata = Cast<USaveGameMetadata>(UGameplayStatics::LoadGameFromSlot(MetadataSaveSlot, 0));
 	const FString LevelToOpen = SaveGameMetadata->SavedGamesMetadata.Find(CurrentSaveSlot)->SavedLevelName;
-	GameInstance->HostGame("Test", LevelToOpen);
+	// GameInstance->HostGame("Test", LevelToOpen); todo: clean comments
+	GameInstance->CreateSession();
 }
 
 void USaveManager::LoadGame()

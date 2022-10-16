@@ -16,6 +16,7 @@ public class NetGame : ModuleRules
 			"HeadMountedDisplay",
 			"OnlineSubsystem",
 			"OnlineSubsystemUtils",
+			"OnlineSubsystemEOS",
 			"UMG"
 		});
 		

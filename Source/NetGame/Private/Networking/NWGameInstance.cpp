@@ -20,7 +20,7 @@ void UNWGameInstance::Init()
 {
 	Super::Init();
 
-	USaveManager::Init(this);
+	// USaveManager::Init(this); todo: comments
 	
 	if (IOnlineSubsystem::Get() == nullptr)
 		return;

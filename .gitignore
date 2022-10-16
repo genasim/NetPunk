@@ -92,3 +92,5 @@ DerivedDataCache/*
 !_Documentation/*.rar
 
 !NetPunk_Setup.exe
+
+EOS-SDK-c++-v1.15.3/*
