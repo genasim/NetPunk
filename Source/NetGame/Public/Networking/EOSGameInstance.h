@@ -24,8 +24,12 @@ public:
 
 	void LoginEOS();
 
+	UFUNCTION(BlueprintCallable,BlueprintAuthorityOnly, Category="EOS Networking")
+	void CreateSession(const FString OpenLevelName);
 	UFUNCTION(BlueprintCallable, Category="EOS Networking")
-	void CreateSession();
+	void DestroySession();
+	UFUNCTION(BlueprintCallable, Category="EOS Networking")
+	void GetAllFriends();
 
 protected:
 	IOnlineSubsystem* OnlineSubsystem;
@@ -34,7 +38,8 @@ protected:
 	
 	virtual void OnCreateSessionComplete(FName SessionName, bool Succeeded);
 	virtual void OnLoginComplete(int32 LocalUserNum, bool bWasSuccessful, const FUniqueNetId& UserId, const FString& Error);
-
+	virtual void OnDestroySessionComplete(FName SessionName, bool Succeeded);
+	virtual void OnGetAllFriendsComplete(int32 LocalUserNum, bool bWasSuccessful, const FString& ListName, const FString& ErrorStr);
 	
 	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category="EOS Networking")
 	FShowErrorMessageEOS ShowErrorMessageEOS;
@@ -42,6 +47,5 @@ protected:
 private:
 	FName DefaultSessionName = "Test Session";
 	FString LevelToOpen = "TutorialCave";
-
 	bool bIsLoggedIn;
 };

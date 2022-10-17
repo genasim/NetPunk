@@ -4,6 +4,7 @@
 #include "Networking/EOSGameInstance.h"
 
 #include "OnlineSessionSettings.h"
+#include "Interfaces/OnlineFriendsInterface.h"
 #include "Interfaces/OnlineIdentityInterface.h"
 #include "SaveLoad/SaveManager.h"
 
@@ -29,29 +30,39 @@ void UEOSGameInstance::Init()
 void UEOSGameInstance::LoginEOS()
 {
 	FOnlineAccountCredentials Credentials;
-	Credentials.Type = FString("developer");		//	developer type insists that the DevAuth tool is running in the background
-	Credentials.Id = FString("localhost:6000");
-	Credentials.Token = FString("Devtester");
+	Credentials.Type = FString();		//	developer type insists that the DevAuth tool is running in the background
+	Credentials.Id = FString();			//	Since we are now using EOSPlus we login through Steam
+	Credentials.Token = FString();
 	
 	Identity->OnLoginCompleteDelegates->AddUObject(this, &UEOSGameInstance::OnLoginComplete);
 	Identity->Login(0, Credentials);
 }
 
+void UEOSGameInstance::GetAllFriends()
+{
+	const IOnlineFriendsPtr FriendsPtr = OnlineSubsystem->GetFriendsInterface();
+	FriendsPtr->ReadFriendsList(0, FString(""), FOnReadFriendsListComplete::CreateUObject(this, &UEOSGameInstance::OnGetAllFriendsComplete));
+	
+}
+
+void UEOSGameInstance::OnGetAllFriendsComplete(int32 LocalUserNum, bool bWasSuccessful, const FString& ListName,
+	const FString& ErrorStr)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Getting Friendslist -> Success: %d"), bWasSuccessful)
+}
+
 void UEOSGameInstance::OnLoginComplete(int32 LocalUserNum, bool bWasSuccessful, const FUniqueNetId& UserId,
-	const FString& Error)
+                                       const FString& Error)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Login Delegate fired -> Success: %d"), bWasSuccessful)
 	bIsLoggedIn = bWasSuccessful;
 	if (!bWasSuccessful)
-	{
-		ShowErrorMessageEOS.Broadcast(TEXT("Login Failed!"));
-		return;
-	}
+		ShowErrorMessageEOS.Broadcast(Error);
 	
 	Identity->ClearOnLoginCompleteDelegates(0, this);
 }
 
-void UEOSGameInstance::CreateSession()
+void UEOSGameInstance::CreateSession(const FString OpenLevelName)
 {
 	FOnlineSessionSettings SessionSettings;
 	SessionSettings.bIsDedicated = false;
@@ -64,9 +75,13 @@ void UEOSGameInstance::CreateSession()
 	SessionSettings.bIsLANMatch = false;
 	SessionSettings.bUseLobbiesIfAvailable = true;
 	SessionSettings.Set(SEARCH_KEYWORDS, FString("GameLobby"), EOnlineDataAdvertisementType::ViaOnlineService);
-		
+
+	if (OpenLevelName != "")
+		LevelToOpen = OpenLevelName;	//	Otherwise use the Default Level -> meant for when session is created through the NewGame menu
+	
 	SessionPtr->OnCreateSessionCompleteDelegates.AddUObject(this, &UEOSGameInstance::OnCreateSessionComplete);
 	SessionPtr->CreateSession(0, DefaultSessionName, SessionSettings);
+	GetWorld()->ServerTravel("/Game/Levels/" + LevelToOpen + "?listen");
 }
 
 void UEOSGameInstance::OnCreateSessionComplete(FName SessionName, bool Succeeded)
@@ -81,5 +96,17 @@ void UEOSGameInstance::OnCreateSessionComplete(FName SessionName, bool Succeeded
 	}
 
 	SessionPtr->ClearOnCreateSessionCompleteDelegates(this);
+}
+
+void UEOSGameInstance::DestroySession()
+{
+	SessionPtr->OnDestroySessionCompleteDelegates.AddUObject(this, &UEOSGameInstance::OnDestroySessionComplete);
+	SessionPtr->DestroySession(DefaultSessionName);
+}
+
+void UEOSGameInstance::OnDestroySessionComplete(FName SessionName, bool Succeeded)
+{
+	USaveManager::ClearSaveInterfaceArray();
+	SessionPtr->ClearOnDestroySessionCompleteDelegates(this);
 }
 
