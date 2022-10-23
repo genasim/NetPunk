@@ -11,6 +11,7 @@
 ANetGameGameMode::ANetGameGameMode()
 {
 	PlayerControllerClass = ANetPlayerController::StaticClass();
+	bUseSeamlessTravel = true;
 }
 
 APawn* ANetGameGameMode::SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer,

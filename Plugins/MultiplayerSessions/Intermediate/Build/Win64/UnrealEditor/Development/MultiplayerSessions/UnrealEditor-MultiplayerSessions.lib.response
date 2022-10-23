@@ -1,0 +1,13 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UnrealEditor-MultiplayerSessions.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"E:\Unreal Projects\NetGame\Intermediate\Build\Win64\NetGameEditor\Development\Engine\SharedPCH.Engine.ShadowErrors.h.obj"
+"E:\Unreal Projects\NetGame\Plugins\MultiplayerSessions\Intermediate\Build\Win64\UnrealEditor\Development\MultiplayerSessions\Module.MultiplayerSessions.cpp.obj"
+"E:\Unreal Projects\NetGame\Plugins\MultiplayerSessions\Intermediate\Build\Win64\UnrealEditor\Development\MultiplayerSessions\Module.MultiplayerSessions.gen.cpp.obj"
+"E:\Unreal Projects\NetGame\Plugins\MultiplayerSessions\Intermediate\Build\Win64\UnrealEditor\Development\MultiplayerSessions\Default.rc2.res"
+/OUT:"E:\Unreal Projects\NetGame\Plugins\MultiplayerSessions\Intermediate\Build\Win64\UnrealEditor\Development\MultiplayerSessions\UnrealEditor-MultiplayerSessions.lib"

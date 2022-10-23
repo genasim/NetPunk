@@ -91,7 +91,7 @@ void USaveManager::LoadSavedLevel()
 	const USaveGameMetadata* SaveGameMetadata = Cast<USaveGameMetadata>(UGameplayStatics::LoadGameFromSlot(MetadataSaveSlot, 0));
 	const FString LevelToOpen = SaveGameMetadata->SavedGamesMetadata.Find(CurrentSaveSlot)->SavedLevelName;
 	// GameInstance->HostGame("Test", LevelToOpen); todo: clean comments
-	GameInstance->CreateSession(LevelToOpen);
+	GameInstance->CreateSession();
 }
 
 void USaveManager::LoadGame()
