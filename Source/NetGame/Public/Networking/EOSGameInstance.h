@@ -34,26 +34,26 @@ public:
 	void ShowInviteFriendsUI();
 	
 protected:
-	void FetchOnlinePointers();
 	IOnlineSessionPtr SessionPtr;
-	IOnlineIdentityPtr Identity;
+	IOnlineIdentityPtr IdentityPtr;
 	IOnlineExternalUIPtr ExternalUIPtr;
 	
-
 	TSharedPtr<FOnlineSessionSearch> SearchSettings;
 	
-	virtual void OnCreateSessionComplete(FName SessionName, bool Succeeded);
-	virtual void OnLoginComplete(int32 LocalUserNum, bool bWasSuccessful,
+	void OnCreateSessionComplete(FName SessionName, bool Succeeded);
+	void OnLoginComplete(int32 LocalUserNum, bool bWasSuccessful,
 		const FUniqueNetId& UserId, const FString& Error);
-	virtual void OnDestroySessionComplete(FName SessionName, bool Succeeded);
-	virtual void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
-	virtual void OnSessionUserInviteAccepted(const bool bWasSuccessful, const int32 ControllerId,
+	void OnDestroySessionComplete(FName SessionName, bool Succeeded);
+	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+	void OnSessionUserInviteAccepted(const bool bWasSuccessful, const int32 LocalUserNum,
 		FUniqueNetIdPtr UserId, const FOnlineSessionSearchResult& InviteResult);
 	
 	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category="EOS Networking")
 	FShowErrorMessageEOS ShowErrorMessageEOS;
 
 private:
+	bool EnsureOnlinePointersValidity();
+	
 	FName DefaultSessionName = "Test Session";
 	FString LevelToOpen = "TutorialCave";
 	bool bIsLoggedIn;
