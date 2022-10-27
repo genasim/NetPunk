@@ -22,7 +22,6 @@ class NETGAME_API USaveManager : public UObject
 public:
 	/// @brief Initialise the class. Must be called when game first launches
 	static void Init(UEOSGameInstance* InGameInstance);
-	// static void Init(UNWGameInstance* InGameInstance); todo: clean comments
 
 	/**
 	 *	@brief Queries all the actors in the game that implement the save interface

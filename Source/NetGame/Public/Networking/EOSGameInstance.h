@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "OnlineSessionSettings.h"
 #include "Engine/GameInstance.h"
 #include "OnlineSubsystem.h"
 #include "Characters/PlayerCharacter.h"
@@ -10,6 +11,15 @@
 #include "EOSGameInstance.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FShowErrorMessageEOS, FString, ErrorMessage);
+
+struct FSessionInfo
+{
+public:
+	FUniqueNetIdPtr UserId;
+	int32 LocalUserNum;
+	FOnlineSessionSearchResult SessionResult;
+	FName SessionName;
+};
 
 /**
  * 
@@ -25,13 +35,13 @@ public:
 
 	void LoginEOS();
 
-	UFUNCTION(BlueprintCallable,BlueprintAuthorityOnly, Category="EOS Networking")
-	void CreateSession();
 	UFUNCTION(BlueprintCallable, Category="EOS Networking")
 	void DestroySession();
-	void JoinGame(FUniqueNetIdPtr UserID, const FOnlineSessionSearchResult& SessionToJoin);
 	UFUNCTION(BlueprintCallable, Category="EOS Networking")
 	void ShowInviteFriendsUI();
+
+	void CreateSession();
+	void JoinGame(const FSessionInfo* Session);
 	
 protected:
 	IOnlineSessionPtr SessionPtr;
@@ -45,6 +55,7 @@ protected:
 		const FUniqueNetId& UserId, const FString& Error);
 	void OnDestroySessionComplete(FName SessionName, bool Succeeded);
 	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+
 	void OnSessionUserInviteAccepted(const bool bWasSuccessful, const int32 LocalUserNum,
 		FUniqueNetIdPtr UserId, const FOnlineSessionSearchResult& InviteResult);
 	
@@ -53,11 +64,11 @@ protected:
 
 private:
 	bool EnsureOnlinePointersValidity();
+	FSessionInfo SessionInfo;
 	
-	FName DefaultSessionName = "Test Session";
 	FString LevelToOpen = "TutorialCave";
 	bool bIsLoggedIn;
-
+	
 public:
 	/// @brief Returns the APlayerCharacter for this UNWGameInstance
 	UFUNCTION(BlueprintPure, Category="Networking")
@@ -65,4 +76,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Networking")
 	static void ServerTravelBP(const FString& LevelAddress, const bool Absolute, const bool ShouldSkipGameNotify);
+
+	UFUNCTION(BlueprintCallable, Category="Networking")
+	void ServerTravel(const FString& LevelAddress);
 };

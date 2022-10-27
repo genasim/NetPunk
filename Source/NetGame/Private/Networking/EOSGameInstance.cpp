@@ -5,6 +5,7 @@
 
 #include "OnlineSessionSettings.h"
 #include "Interfaces/OnlineExternalUIInterface.h"
+#include "Interfaces/OnlineFriendsInterface.h"
 #include "Interfaces/OnlineIdentityInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "SaveLoad/SaveManager.h"
@@ -21,9 +22,10 @@ bool UEOSGameInstance::EnsureOnlinePointersValidity()
 		return true;
 
 	const IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+	ensureAlwaysMsgf(OnlineSubsystem != nullptr, TEXT("OnlineSubsytem is invalid!"));
 	if (OnlineSubsystem == nullptr)
 		return false;
-
+		
 	SessionPtr = OnlineSubsystem->GetSessionInterface();
 	IdentityPtr = OnlineSubsystem->GetIdentityInterface();
 	ExternalUIPtr = OnlineSubsystem->GetExternalUIInterface();
@@ -39,11 +41,11 @@ void UEOSGameInstance::Init()
 	
 	if (EnsureOnlinePointersValidity())
 	{
-		IdentityPtr->OnLoginCompleteDelegates->AddUObject(this, &UEOSGameInstance::OnLoginComplete);
+		IdentityPtr->OnLoginCompleteDelegates->AddUObject(this, &ThisClass::OnLoginComplete);
 		SessionPtr->OnCreateSessionCompleteDelegates.AddUObject(this, &ThisClass::OnCreateSessionComplete);
 		SessionPtr->OnSessionUserInviteAcceptedDelegates.AddUObject(this, &ThisClass::OnSessionUserInviteAccepted);
-		SessionPtr->OnDestroySessionCompleteDelegates.AddUObject(this, &UEOSGameInstance::OnDestroySessionComplete);
-		SessionPtr->OnJoinSessionCompleteDelegates.AddUObject(this, &UEOSGameInstance::OnJoinSessionComplete);
+		SessionPtr->OnDestroySessionCompleteDelegates.AddUObject(this, &ThisClass::OnDestroySessionComplete);
+		SessionPtr->OnJoinSessionCompleteDelegates.AddUObject(this, &ThisClass::OnJoinSessionComplete);
 	}
 	
 	LoginEOS();
@@ -70,12 +72,13 @@ void UEOSGameInstance::OnLoginComplete(int32 LocalUserNum, bool bWasSuccessful, 
 	if (!bWasSuccessful)
 		ShowErrorMessageEOS.Broadcast(Error);
 
-	DefaultSessionName = FName(*UserId.ToString());
+	SessionInfo.SessionName = FName(*UserId.ToString());
 	CreateSession();
 }
 
 void UEOSGameInstance::CreateSession()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Create Session -> bIsLoggedIn: %d"), bIsLoggedIn)
 	if (!bIsLoggedIn)
 		return;
 	
@@ -90,10 +93,10 @@ void UEOSGameInstance::CreateSession()
 	SessionSettings.bShouldAdvertise = true;
 	SessionSettings.bIsLANMatch = false;
 	SessionSettings.bUseLobbiesIfAvailable = true;
-	SessionSettings.Set(SEARCH_KEYWORDS, FString("GameLobby"), EOnlineDataAdvertisementType::ViaOnlineService);
+	SessionSettings.Set(SEARCH_KEYWORDS, FString("GameLobby"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 	if (EnsureOnlinePointersValidity())
-		SessionPtr->CreateSession(0, DefaultSessionName, SessionSettings);
+		SessionPtr->CreateSession(0, SessionInfo.SessionName, SessionSettings);
 }
 
 void UEOSGameInstance::OnCreateSessionComplete(FName SessionName, bool Succeeded)
@@ -108,44 +111,43 @@ void UEOSGameInstance::OnCreateSessionComplete(FName SessionName, bool Succeeded
 		ShowErrorMessageEOS.Broadcast(TEXT("Could not create session!"));
 		return;
 	}
+
+	GetWorld()->ServerTravel("/Game/Levels/MainMenu?listen");
 }
 
 void UEOSGameInstance::OnSessionUserInviteAccepted(const bool bWasSuccessful, const int32 LocalUserNum,
 	const FUniqueNetIdPtr UserId, const FOnlineSessionSearchResult& InviteResult)
 {
 	SessionPtr->ClearOnSessionUserInviteAcceptedDelegates(this);
+	DestroySession();
 	
 	UE_LOG(LogTemp, Warning, TEXT("Session User Invite Accepted -> Success: %d"), bWasSuccessful)
-	// if (!bWasSuccessful)
-		// return;
+	if (!bWasSuccessful)
+		return;
+
+	ensureMsgf(InviteResult.IsValid(), TEXT("Invite Result is Invalid!!"));
+	if (!InviteResult.IsValid())
+		return;
 	
-	// ensureMsgf(InviteResult.IsValid(), TEXT("Invite Result is Invalid!!"));
-	// if (!InviteResult.IsValid())
-	// 	return;
-	//
-	// ShowErrorMessageEOS.Broadcast("Client has joined game");
-	// JoinGame(UserId, InviteResult);
-	UE_LOG(LogTemp, Warning, TEXT("OnSessionInviteAccepted LocalUserNum: %d bSuccess: %d"), LocalUserNum, bWasSuccessful);
-	DestroySession();
-	if (bWasSuccessful)
-	{
-		if (InviteResult.IsValid())
-		{
-			IOnlineSessionPtr SessionInt = IOnlineSubsystem::Get()->GetSessionInterface();
-			SessionInt->JoinSession(LocalUserNum, DefaultSessionName, InviteResult);
-		}
-		else
-			UE_LOG(LogTemp, Warning, TEXT("Invite accept returned no search result."));
-	}
+	SessionInfo.SessionResult = InviteResult;
+	SessionInfo.LocalUserNum = LocalUserNum;
+	SessionInfo.UserId = UserId;
+
+	// Wait for DestroySession and callback to finish so that JoinGame doesn't think user is still in session
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [&]{
+		JoinGame(&SessionInfo);
+	}, 2, false);
 }
 
-void UEOSGameInstance::JoinGame(const FUniqueNetIdPtr UserID, const FOnlineSessionSearchResult& SessionToJoin)
+void UEOSGameInstance::JoinGame(const FSessionInfo* Session)
 {
-	if (!SessionToJoin.IsValid())
+	UE_LOG(LogTemp, Warning, TEXT("Join Game -> Session to join is Valid: %d"), Session->SessionResult.IsValid())
+	if (!Session->SessionResult.IsValid())
 		return;
 
 	if (EnsureOnlinePointersValidity())
-		SessionPtr->JoinSession(UserID->AsShared().Get(), DefaultSessionName, SessionToJoin);
+		SessionPtr->JoinSession(Session->LocalUserNum, Session->SessionName, Session->SessionResult);
 }
 
 void UEOSGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
@@ -154,22 +156,16 @@ void UEOSGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
 	SessionPtr->ClearOnJoinSessionCompleteDelegates(this);
 	if (Result != EOnJoinSessionCompleteResult::Success)
 		return;
-	
-	UE_LOG(LogTemp, Warning, TEXT("JoinSessionCompleted"));
-	if (EnsureOnlinePointersValidity())
+
+	FString ConnectString;
+	if (!SessionPtr->GetResolvedConnectString(SessionName, ConnectString))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Sessions Valid"));
-		// Client travel to the server
-		FString ConnectString;
-		if (!SessionPtr->GetResolvedConnectString(SessionName, ConnectString))
-		{
-			UE_LOG(LogTemp, Error, TEXT("ConnectionInfo is Empty!!"))
-			return;
-		}
-		
-		UE_LOG(LogTemp, Warning, TEXT("Join session: traveling to %s"), *ConnectString);
-		GetFirstLocalPlayerController()->ClientTravel(ConnectString, TRAVEL_Absolute);
+		UE_LOG(LogTemp, Error, TEXT("ConnectionInfo is Empty!!"))
+		return;
 	}
+	
+	UE_LOG(LogTemp, Warning, TEXT("Join session: traveling to %s"), *ConnectString);
+	GetFirstLocalPlayerController()->ClientTravel(ConnectString, TRAVEL_Absolute, true);
 }
 
 void UEOSGameInstance::DestroySession()
@@ -177,7 +173,7 @@ void UEOSGameInstance::DestroySession()
 	USaveManager::ClearSaveInterfaceArray();
 	
 	if (EnsureOnlinePointersValidity())
-		SessionPtr->DestroySession(DefaultSessionName);
+		SessionPtr->DestroySession(SessionInfo.SessionName);
 }
 
 void UEOSGameInstance::OnDestroySessionComplete(FName SessionName, bool Succeeded)
@@ -192,7 +188,7 @@ void UEOSGameInstance::ShowInviteFriendsUI()
 	{
 		if (!bIsLoggedIn)
 			return;
-		ExternalUIPtr->ShowInviteUI(0, DefaultSessionName);
+		ExternalUIPtr->ShowInviteUI(0, SessionInfo.SessionName);
 	}
 }
 
@@ -208,6 +204,19 @@ APlayerCharacter* UEOSGameInstance::GetLocalPlayerCharacter()
 
 void UEOSGameInstance::ServerTravelBP(const FString& LevelAddress, const bool Absolute, const bool ShouldSkipGameNotify)
 {
+	USaveManager::ClearSaveInterfaceArray();
+	
 	if (GEngine != nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GEngine is valid: %d"), GEngine != nullptr)
 		GEngine->GameViewport->GetWorld()->ServerTravel("/Game/Levels/" + LevelAddress + "?listen", Absolute, ShouldSkipGameNotify);
+	}
+}
+
+void UEOSGameInstance::ServerTravel(const FString& LevelAddress)
+{
+	USaveManager::ClearSaveInterfaceArray();
+	const auto* const GameMode = UGameplayStatics::GetGameMode(GetWorld());
+
+	GetWorld()->ServerTravel("/Game/Levels/" + LevelAddress + "?listen",true);
 }
